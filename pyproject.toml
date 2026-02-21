@@ -1,0 +1,45 @@
+[project]
+name = "ableton-mcp-stable"
+version = "2.9.1"
+description = "AbletonMCP — Ableton Live integration through the Model Context Protocol"
+readme = "README.md"
+requires-python = ">=3.10"
+authors = [
+    {name = "Siddharth Ahuja", email = "ahujasid@gmail.com"}
+]
+license = {text = "MIT"}
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+]
+dependencies = [
+    "mcp[cli]>=1.3.0",
+]
+
+[project.optional-dependencies]
+elevenlabs = [
+    "elevenlabs>=0.2.26",
+    "python-dotenv>=1.0.0",
+    "httpx>=0.24.0",
+    "pydantic>=2.0",
+    "rapidfuzz",
+]
+
+[project.scripts]
+ableton-mcp-stable = "MCP_Server.server:main"
+elevenlabs-mcp = "elevenlabs_mcp.server:main"
+
+[build-system]
+requires = ["setuptools>=61.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools]
+packages = ["MCP_Server", "elevenlabs_mcp"]
+
+[tool.setuptools.package-data]
+MCP_Server = ["browser_cache_seed.json"]
+
+[project.urls]
+"Homepage" = "https://github.com/ahujasid/ableton-mcp"
+"Bug Tracker" = "https://github.com/ahujasid/ableton-mcp/issues"
