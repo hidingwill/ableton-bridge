@@ -1,6 +1,6 @@
-# AbletonMCP Max for Live Bridge (v4.0.0)
+# AbletonBridge Max for Live Bridge (v4.0.0)
 
-Optional deep Live Object Model (LOM) access that extends the standard AbletonMCP Remote Script. Now an **Audio Effect** device (upgraded from MIDI Effect) — enabling real-time audio analysis via `plugin~`. Adds **43 tools** (46 OSC commands) for:
+Optional deep Live Object Model (LOM) access that extends the standard AbletonBridge Remote Script. Now an **Audio Effect** device (upgraded from MIDI Effect) — enabling real-time audio analysis via `plugin~`. Adds **43 tools** (46 OSC commands) for:
 
 - Hidden/non-automatable parameters on any Ableton device
 - Device chain navigation inside Instrument Racks, Audio Effect Racks, and Drum Racks
@@ -93,7 +93,7 @@ Both versions contain the same `m4l_bridge.js` — the `.amxd` patch files diffe
 ### Prerequisites
 
 - Ableton Live **Suite** or **Standard + Max for Live** add-on
-- AbletonMCP Remote Script already installed and working
+- AbletonBridge Remote Script already installed and working
 
 ### Using the Pre-Built Device (Recommended)
 
@@ -182,7 +182,7 @@ If you need to build the device from scratch (e.g., for a different Ableton vers
 9. **Save the device**:
    - **Lock the patch** first (Cmd+E / Ctrl+E)
    - **File → Save As...** in the Max editor
-   - Save as `AbletonMCP_Bridge.amxd` in your User Library
+   - Save as `AbletonBridge.amxd` in your User Library
    - Recommended path: `User Library/Presets/Audio Effects/Max Audio Effect/`
 
 10. **Close the Max editor**
@@ -196,7 +196,7 @@ All 41 OSC commands, LiveAPI access, observers, and cross-track meter reading wo
 ### Loading the Device
 
 1. Open your Ableton Live project
-2. Find `AbletonMCP_Bridge` in your User Library browser
+2. Find `AbletonBridge` in your User Library browser
 3. Drag it onto **any track** — audio tracks work directly; MIDI tracks need an instrument before the device
 4. The device will immediately start listening on UDP port 9878
 
@@ -333,7 +333,7 @@ m4l_status()  →  "M4L bridge connected (v3.6.0)"
 ## Troubleshooting
 
 **"M4L bridge not connected"**
-- Ensure the AbletonMCP_Bridge device is loaded on a track
+- Ensure the AbletonBridge device is loaded on a track
 - Check that port 9878 is not used by another application
 - Make sure the patch is **locked** (not in edit mode) — `udpreceive` may not work while unlocked
 

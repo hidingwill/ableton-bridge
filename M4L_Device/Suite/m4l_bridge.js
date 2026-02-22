@@ -1,8 +1,8 @@
 /**
- * AbletonMCP Beta — M4L Bridge — m4l_bridge.js
+ * AbletonBridge — M4L Bridge — m4l_bridge.js
  *
  * This script runs inside a Max for Live [js] object and provides
- * deep Live Object Model (LOM) access for the AbletonMCP Beta server.
+ * deep Live Object Model (LOM) access for the AbletonBridge server.
  *
  * Communication uses native OSC messages via udpreceive/udpsend:
  *   - The MCP server sends OSC messages like /ping, /discover_params, etc.
@@ -21,7 +21,7 @@ outlets = 1;
 // Initialization
 // ---------------------------------------------------------------------------
 function loadbang() {
-    post("AbletonMCP Beta M4L Bridge v3.6.0 starting...\n");
+    post("AbletonBridge M4L Bridge v3.6.0 starting...\n");
     post("Listening for OSC commands on port 9878.\n");
     post("Dashboard: http://127.0.0.1:9880\n");
 }
@@ -258,7 +258,7 @@ function anything() {
             break;
 
         default:
-            post("AbletonMCP Beta Bridge: unknown command: '" + cmd + "' (raw: '" + addr + "')\n");
+            post("AbletonBridge Bridge: unknown command: '" + cmd + "' (raw: '" + addr + "')\n");
             break;
     }
 }

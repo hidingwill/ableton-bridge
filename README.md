@@ -1,8 +1,8 @@
-# ableton bridge
+# AbletonBridge
 
 **304 tools connecting Claude AI to Ableton Live** (285 core + 19 optional ElevenLabs voice/SFX tools)
 
-ableton bridge gives Claude direct control over your Ableton Live session through the Model Context Protocol. Create tracks, write MIDI, design sounds, mix, automate, browse instruments, snapshot presets, and navigate deep into device chains and modulation matrices — all through natural language conversation.
+AbletonBridge gives Claude direct control over your Ableton Live session through the Model Context Protocol. Create tracks, write MIDI, design sounds, mix, automate, browse instruments, snapshot presets, and navigate deep into device chains and modulation matrices — all through natural language conversation.
 
 ---
 
@@ -229,7 +229,7 @@ Claude AI  <--MCP-->  MCP Server  <--TCP:9877-->  Ableton Remote Script
 
 ## Stability & Reliability
 
-AbletonMCP is built to handle real-world sessions without crashing Ableton. Every crash discovered during development was traced to a root cause and fixed with a targeted safeguard:
+AbletonBridge is built to handle real-world sessions without crashing Ableton. Every crash discovered during development was traced to a root cause and fixed with a targeted safeguard:
 
 - **Chunked async LiveAPI operations** — large device discovery (93+ parameters) is split into 4-param chunks with 50ms delays between each. Prevents synchronous LiveAPI overload that crashes Ableton's scripting engine.
 
@@ -249,7 +249,7 @@ AbletonMCP is built to handle real-world sessions without crashing Ableton. Ever
 
 - **Singleton guard** — exclusive TCP port lock (9881) prevents duplicate MCP server instances from conflicting.
 
-- **Disk-persisted browser cache** — 6,400+ browser items cached to `~/.ableton-mcp/browser_cache.json.gz`. Loaded instantly on startup (~50ms). Background refresh keeps it current. No 2-3 minute wait on first launch.
+- **Disk-persisted browser cache** — 6,400+ browser items cached to `~/.ableton-bridge/browser_cache.json.gz`. Loaded instantly on startup (~50ms). Background refresh keeps it current. No 2-3 minute wait on first launch.
 
 - **Auto-reconnect with exponential backoff** — both TCP and UDP connections recover automatically from Ableton restarts or network interruptions.
 
@@ -276,7 +276,7 @@ AbletonMCP is built to handle real-world sessions without crashing Ableton. Ever
 
 ## Optional: ElevenLabs Voice & SFX Server
 
-AbletonMCP includes an optional ElevenLabs integration that provides 19 additional tools for AI voice generation, sound effects, voice cloning, and conversational AI agents. Generated audio saves directly to your Ableton User Library for easy import.
+AbletonBridge includes an optional ElevenLabs integration that provides 19 additional tools for AI voice generation, sound effects, voice cloning, and conversational AI agents. Generated audio saves directly to your Ableton User Library for easy import.
 
 ### Setup
 
@@ -287,9 +287,9 @@ AbletonMCP includes an optional ElevenLabs integration that provides 19 addition
 ```json
 {
   "mcpServers": {
-    "ableton-mcp": {
+    "ableton-bridge": {
       "command": "uv",
-      "args": ["run", "ableton-mcp-stable"]
+      "args": ["run", "ableton-bridge"]
     },
     "elevenlabs": {
       "command": "uv",
@@ -311,4 +311,3 @@ AbletonMCP includes an optional ElevenLabs integration that provides 19 addition
 > "Transcribe the audio clip on my desktop"
 >
 > "Clone my voice from these 3 samples and use it for text-to-speech"
-

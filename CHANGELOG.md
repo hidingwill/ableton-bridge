@@ -1,6 +1,6 @@
 # Changelog
 
-All notable changes to ableton bridge will be documented in this file.
+All notable changes to AbletonBridge will be documented in this file.
 
 ---
 
@@ -206,7 +206,7 @@ Internal hardening sweep across Remote Script, ElevenLabs MCP, and documentation
 
 #### Package Metadata
 
-- **fix**: `pyproject.toml` — description removed "Beta" to match `ableton-mcp-stable` package name.
+- **fix**: `pyproject.toml` — description removed "Beta" to match `ableton-bridge` package name.
 - **fix**: `pyproject.toml` — `[project.urls]` corrected to canonical `ahujasid/ableton-mcp` repository.
 - **fix**: `pyproject.toml` — elevenlabs optional-dependencies: pinned `httpx>=0.24.0` (minimum version supporting explicit `Timeout`); replaced `fuzzywuzzy` with `rapidfuzz` (C++ backend, no `python-Levenshtein` warning).
 - **fix**: `utils.py` — updated `from fuzzywuzzy import fuzz` → `from rapidfuzz import fuzz` (drop-in compatible `token_sort_ratio`).
@@ -271,7 +271,7 @@ Internal refactoring across all 4 layers — no new tools, no API changes, no be
 ### Remote Script Bug Fixes & Hardening (24 fixes across 9 handler files)
 
 #### Repository Cleanup
-- **fix**: Deleted duplicated nested `AbletonMCP_Remote_Script/AbletonMCP_Remote_Script/` directory — was causing maintenance drift with the canonical outer handlers
+- **fix**: Deleted duplicated nested `AbletonBridge_Remote_Script/AbletonBridge_Remote_Script/` directory — was causing maintenance drift with the canonical outer handlers
 
 #### Dispatch & Session
 - **fix**: `stop_arrangement_recording` dispatch passed `ctrl` as `stop_playback` — callers can now control `stop_playback` correctly
@@ -851,7 +851,7 @@ Cross-referenced the Live Object Model (Max 9), Python API stubs, and Live 12.4 
 - **Clean import**: `import collections` → `from collections import deque`
 
 ### Improvements
-- Package renamed to `ableton-mcp-stable` for stable release channel
+- Package renamed to `ableton-bridge` for stable release channel
 - Fixed server version detection (`importlib.metadata` now uses correct package name)
 - Total tools: 94 -> **131** (+37 new tools)
 
@@ -881,7 +881,7 @@ Cross-referenced the Live Object Model (Max 9), Python API stubs, and Live 12.4 
 
 ### No Code Changes
 - `MCP_Server/server.py` — identical functionality to v1.8.0
-- `AbletonMCP_Remote_Script/__init__.py` — identical functionality to v1.8.0
+- `AbletonBridge_Remote_Script/__init__.py` — identical functionality to v1.8.0
 - Total tools: **94** (unchanged)
 
 ---
@@ -967,7 +967,7 @@ Cross-referenced the Live Object Model (Max 9), Python API stubs, and Live 12.4 
 ## v1.5.1 — 2026-02-09
 
 ### Rebrand
-- Renamed from "ableton-mcp" to "AbletonMCP Beta"
+- Renamed from "ableton-bridge" to "AbletonBridge"
 - Comprehensive README rewrite with full tool reference and architecture documentation
 
 ---
@@ -979,4 +979,3 @@ Cross-referenced the Live Object Model (Max 9), Python API stubs, and Live 12.4 
 - Bug fixes and stability improvements
 - Live 12 compatibility
 - 61 MCP tools
-

@@ -1,11 +1,11 @@
 [project]
-name = "ableton-mcp-stable"
+name = "ableton-bridge"
 version = "3.0.0"
-description = "AbletonMCP — Ableton Live integration through the Model Context Protocol"
+description = "AbletonBridge — Ableton Live integration through the Model Context Protocol"
 readme = "README.md"
 requires-python = ">=3.10"
 authors = [
-    {name = "Siddharth Ahuja", email = "ahujasid@gmail.com"}
+    {name = "William De Simone", email = "hidingwillmusic@outlook.com"}
 ]
 license = {text = "MIT"}
 classifiers = [
@@ -27,7 +27,7 @@ elevenlabs = [
 ]
 
 [project.scripts]
-ableton-mcp-stable = "MCP_Server.server:main"
+ableton-bridge = "MCP_Server.server:main"
 elevenlabs-mcp = "elevenlabs_mcp.server:main"
 
 [build-system]

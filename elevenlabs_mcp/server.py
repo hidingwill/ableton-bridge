@@ -108,7 +108,7 @@ mcp = FastMCP("ElevenLabs")
 @mcp.tool(
     description="""Convert text to speech with a given voice and save the output audio file to a given directory.
     Only one of voice_id or voice_name can be provided. If none are provided, the default voice will be used.
-    For importing audio files into an Ableton session, pass "query:UserLibrary#eleven_labs_audio:filename.mp3" on "uri" parameter for the "import_audio_file" Ableton MCP tool.
+    For importing audio files into an Ableton session, pass "query:UserLibrary#eleven_labs_audio:filename.mp3" on "uri" parameter for the "import_audio_file" AbletonBridge tool.
 
     ⚠️ COST WARNING: This tool makes an API call to ElevenLabs which may incur costs.
     """
@@ -229,7 +229,7 @@ def speech_to_text(
     description="""Convert text description of a sound effect to sound effect with a given duration and save the output audio file to a given directory.
     Directory is optional, if not provided, the output file will be saved to $HOME/Desktop.
     Duration must be between 0.5 and 5 seconds.
-    For importing audio files into an Ableton session, pass "query:UserLibrary#eleven_labs_audio:filename.mp3" on "uri" parameter for the "import_audio_file" Ableton MCP tool.
+    For importing audio files into an Ableton session, pass "query:UserLibrary#eleven_labs_audio:filename.mp3" on "uri" parameter for the "import_audio_file" AbletonBridge tool.
 
     ⚠️ COST WARNING: This tool makes an API call to ElevenLabs which may incur costs. Only use when explicitly requested by the user.
 

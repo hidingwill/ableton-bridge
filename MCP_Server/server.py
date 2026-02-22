@@ -1,4 +1,4 @@
-# ableton_mcp_server.py — AbletonMCP Beta
+# ableton_bridge_server.py — AbletonBridge
 from mcp.server.fastmcp import FastMCP, Context
 import socket
 import json
@@ -21,7 +21,7 @@ from datetime import datetime, timezone
 # Configure logging
 logging.basicConfig(level=logging.INFO, 
                     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
-logger = logging.getLogger("AbletonMCP-Beta")
+logger = logging.getLogger("AbletonBridge")
 
 @dataclass
 class AbletonConnection:
@@ -817,7 +817,7 @@ async def server_lifespan(server: FastMCP) -> AsyncIterator[Dict[str, Any]]:
             import sys
             sys.exit(1)
 
-        logger.info("AbletonMCP Beta server starting up")
+        logger.info("AbletonBridge server starting up")
         _server_start_time = time.time()
 
         try:
@@ -916,11 +916,11 @@ async def server_lifespan(server: FastMCP) -> AsyncIterator[Dict[str, Any]]:
             _m4l_connection = None
         _release_singleton_lock(_singleton_lock_sock)
         _singleton_lock_sock = None
-        logger.info("AbletonMCP Beta server shut down")
+        logger.info("AbletonBridge server shut down")
 
 # Create the MCP server with lifespan support
 mcp = FastMCP(
-    "AbletonMCP-Beta",
+    "AbletonBridge",
     lifespan=server_lifespan
 )
 
@@ -939,8 +939,8 @@ _tool_call_log: deque = deque(maxlen=50)
 _tool_call_counts: Dict[str, int] = {}
 _tool_call_lock = threading.Lock()
 _dashboard_server = None
-DASHBOARD_PORT = int(os.environ.get("ABLETON_MCP_DASHBOARD_PORT", "9880"))
-SINGLETON_LOCK_PORT = int(os.environ.get("ABLETON_MCP_LOCK_PORT", "9881"))
+DASHBOARD_PORT = int(os.environ.get("ABLETON_BRIDGE_DASHBOARD_PORT", "9880"))
+SINGLETON_LOCK_PORT = int(os.environ.get("ABLETON_BRIDGE_LOCK_PORT", "9881"))
 _singleton_lock_sock: socket.socket = None
 _server_log_buffer: deque = deque(maxlen=200)
 _server_log_lock = threading.Lock()
@@ -1010,7 +1010,7 @@ def _acquire_singleton_lock() -> socket.socket:
     except OSError as e:
         sock.close()
         raise RuntimeError(
-            f"Another AbletonMCP server instance is already running "
+            f"Another AbletonBridge server instance is already running "
             f"(port {SINGLETON_LOCK_PORT} is in use). "
             f"Stop the other instance first."
         ) from e
@@ -1058,7 +1058,7 @@ _browser_cache_timestamp: float = 0.0
 _BROWSER_CACHE_TTL = 604800.0  # 7 days — only refresh_browser_cache forces a rescan
 _browser_cache_lock = threading.Lock()
 _browser_cache_populating = False  # prevents duplicate scans
-_BROWSER_DISK_CACHE_DIR = os.path.join(os.path.expanduser("~"), ".ableton-mcp")
+_BROWSER_DISK_CACHE_DIR = os.path.join(os.path.expanduser("~"), ".ableton-bridge")
 _BROWSER_DISK_CACHE_PATH = os.path.join(_BROWSER_DISK_CACHE_DIR, "browser_cache.json.gz")
 _BROWSER_DISK_CACHE_PATH_LEGACY = os.path.join(_BROWSER_DISK_CACHE_DIR, "browser_cache.json")
 _BROWSER_DISK_CACHE_MAX_AGE = 604800.0  # 7 days — disk cache ignored if older
@@ -1416,7 +1416,7 @@ DASHBOARD_HTML = r"""<!DOCTYPE html>
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>AbletonMCP Beta — Dashboard</title>
+<title>AbletonBridge — Dashboard</title>
 <style>
   * { margin: 0; padding: 0; box-sizing: border-box; }
   body {
@@ -1482,7 +1482,7 @@ DASHBOARD_HTML = r"""<!DOCTYPE html>
 <body>
 <div class="container">
   <div class="refresh-bar">
-    <div><h1>AbletonMCP Beta</h1><div class="subtitle">Status Dashboard</div></div>
+    <div><h1>AbletonBridge</h1><div class="subtitle">Status Dashboard</div></div>
     <span>Refresh in <span id="countdown">3</span>s</span>
   </div>
   <div id="status-banner"></div>
@@ -1590,7 +1590,7 @@ def _get_server_version() -> str:
     """Get server version from package metadata, with fallback."""
     try:
         from importlib.metadata import version as _pkg_version
-        return _pkg_version("ableton-mcp-stable")
+        return _pkg_version("ableton-bridge")
     except Exception:
         return "1.9.0"
 
@@ -1801,7 +1801,7 @@ def get_m4l_connection() -> M4LConnection:
         # Don't tear down, so the next call can retry the ping
         raise ConnectionError(
             "M4L bridge device is not responding. "
-            "Make sure the AbletonMCP_Bridge M4L device is loaded on a track in Ableton."
+            "Make sure the AbletonBridge M4L device is loaded on a track in Ableton."
         )
 
     logger.info("M4L bridge connection established and verified.")
@@ -3840,7 +3840,7 @@ def load_drum_kit(ctx: Context, track_index: int, rack_uri: str, kit_path: str) 
 @mcp.tool()
 @_tool_handler("checking M4L bridge status")
 def m4l_status(ctx: Context) -> str:
-    """Check if the AbletonMCP Max for Live bridge device is loaded and responsive.
+    """Check if the AbletonBridge Max for Live bridge device is loaded and responsive.
 
     The M4L bridge is an optional device that provides access to hidden/non-automatable
     device parameters via the Live Object Model (LOM). All standard MCP tools work
@@ -3866,7 +3866,7 @@ def discover_device_params(ctx: Context, track_index: int, device_index: int) ->
     which typically includes parameters not visible through the standard Remote Script API.
     Works with any Ableton device (Operator, Wavetable, Simpler, Analog, Drift, etc.).
 
-    Requires the AbletonMCP_Bridge M4L device to be loaded on any track.
+    Requires the AbletonBridge M4L device to be loaded on any track.
 
     Compare the results with get_device_parameters() to see which parameters are hidden.
     """
@@ -3895,7 +3895,7 @@ def get_device_hidden_parameters(ctx: Context, track_index: int, device_index: i
     the full Live Object Model parameter tree, which exposes parameters that the
     standard API hides. Works with any Ableton device.
 
-    Requires the AbletonMCP_Bridge M4L device to be loaded on any track.
+    Requires the AbletonBridge M4L device to be loaded on any track.
     """
     _validate_index(track_index, "track_index")
     _validate_index(device_index, "device_index")
@@ -3943,7 +3943,7 @@ def set_device_hidden_parameter(
     The value will be clamped to the parameter's valid range.
     Works with any Ableton device.
 
-    Requires the AbletonMCP_Bridge M4L device to be loaded on any track.
+    Requires the AbletonBridge M4L device to be loaded on any track.
     """
     _validate_index(track_index, "track_index")
     _validate_index(device_index, "device_index")
@@ -4154,7 +4154,7 @@ def get_device_property(
     Use list_device_properties() to see all known properties for a device.
     Use discover_device_params() for indexed parameters instead.
 
-    Requires the AbletonMCP_Bridge M4L device to be loaded on any track.
+    Requires the AbletonBridge M4L device to be loaded on any track.
     """
     _validate_index(track_index, "track_index")
     _validate_index(device_index, "device_index")
@@ -4212,7 +4212,7 @@ def set_device_property(
     Use list_device_properties() to see all known properties and valid values.
     Use get_device_property() to read the current value first.
 
-    Requires the AbletonMCP_Bridge M4L device to be loaded on any track.
+    Requires the AbletonBridge M4L device to be loaded on any track.
     """
     _validate_index(track_index, "track_index")
     _validate_index(device_index, "device_index")
@@ -4281,7 +4281,7 @@ def list_device_properties(
     Use get_device_property() / set_device_property() to read/write these.
     Use discover_device_params() for indexed parameters instead.
 
-    Requires the AbletonMCP_Bridge M4L device to be loaded on any track.
+    Requires the AbletonBridge M4L device to be loaded on any track.
     """
     _validate_index(track_index, "track_index")
     _validate_index(device_index, "device_index")
@@ -4440,7 +4440,7 @@ def batch_set_hidden_parameters(
     Use discover_device_params() first to find parameter indices.
     Values will be clamped to each parameter's valid range.
 
-    Requires the AbletonMCP_Bridge M4L device to be loaded on any track.
+    Requires the AbletonBridge M4L device to be loaded on any track.
     """
     _validate_index(track_index, "track_index")
     _validate_index(device_index, "device_index")
@@ -4516,7 +4516,7 @@ def snapshot_device_state(
     - device_index: The index of the device on the track
     - snapshot_name: Optional human-readable name for the snapshot
 
-    Requires the AbletonMCP_Bridge M4L device to be loaded on any track.
+    Requires the AbletonBridge M4L device to be loaded on any track.
     """
     _validate_index(track_index, "track_index")
     _validate_index(device_index, "device_index")
@@ -4573,7 +4573,7 @@ def restore_device_snapshot(
     - track_index: Override target track (-1 = use original track from snapshot)
     - device_index: Override target device (-1 = use original device from snapshot)
 
-    Requires the AbletonMCP_Bridge M4L device to be loaded on any track.
+    Requires the AbletonBridge M4L device to be loaded on any track.
     """
     try:
         if snapshot_id not in _snapshot_store:
@@ -4708,7 +4708,7 @@ def snapshot_all_devices(
     - track_indices: List of track indices to snapshot
     - snapshot_name: Optional name for the group snapshot
 
-    Requires the AbletonMCP_Bridge M4L device to be loaded on any track.
+    Requires the AbletonBridge M4L device to be loaded on any track.
     """
     if not isinstance(track_indices, list) or len(track_indices) == 0:
         raise ValueError("track_indices must be a non-empty list of integers.")
@@ -4781,7 +4781,7 @@ def restore_group_snapshot(ctx: Context, group_id: str) -> str:
     Parameters:
     - group_id: The group snapshot ID (starts with 'group_')
 
-    Requires the AbletonMCP_Bridge M4L device to be loaded on any track.
+    Requires the AbletonBridge M4L device to be loaded on any track.
     """
     if group_id not in _snapshot_store:
         return f"Group snapshot '{group_id}' not found."
@@ -4911,7 +4911,7 @@ def morph_between_snapshots(
     - track_index: Override target track (-1 = use snapshot A's track)
     - device_index: Override target device (-1 = use snapshot A's device)
 
-    Requires the AbletonMCP_Bridge M4L device to be loaded on any track.
+    Requires the AbletonBridge M4L device to be loaded on any track.
     """
     _validate_range(position, "position", 0.0, 1.0)
 
@@ -4986,7 +4986,7 @@ def create_macro_controller(
 
     After creation, use set_macro_value() to control all linked parameters at once.
 
-    Requires the AbletonMCP_Bridge M4L device to be loaded on any track.
+    Requires the AbletonBridge M4L device to be loaded on any track.
     """
     if not isinstance(mappings, list) or len(mappings) == 0:
         raise ValueError("mappings must be a non-empty list.")
@@ -5033,7 +5033,7 @@ def set_macro_value(ctx: Context, macro_id: str, value: float) -> str:
     - macro_id: The ID of the macro controller
     - value: The macro value (0.0 to 1.0)
 
-    Requires the AbletonMCP_Bridge M4L device to be loaded on any track.
+    Requires the AbletonBridge M4L device to be loaded on any track.
     """
     if macro_id not in _macro_store:
         return f"Macro '{macro_id}' not found. Use list_macros() to see available macros."
@@ -5132,7 +5132,7 @@ def generate_preset(
     - description: Text description of the desired sound (e.g., "bright plucky bass")
     - variation_count: How many variations to suggest (default: 1)
 
-    Requires the AbletonMCP_Bridge M4L device to be loaded on any track.
+    Requires the AbletonBridge M4L device to be loaded on any track.
     """
     _validate_index(track_index, "track_index")
     _validate_index(device_index, "device_index")
@@ -5219,7 +5219,7 @@ def create_parameter_map(
         - friendly_name: str (human-readable name)
         - category: str (optional grouping like "Filter", "Oscillator", "Envelope")
 
-    Requires the AbletonMCP_Bridge M4L device to be loaded on any track.
+    Requires the AbletonBridge M4L device to be loaded on any track.
     """
     _validate_index(track_index, "track_index")
     _validate_index(device_index, "device_index")
@@ -5329,7 +5329,7 @@ def get_cue_points(ctx: Context) -> str:
     Returns a list of all arrangement locators with their names and positions (in beats).
     Cue points are the markers visible in the arrangement timeline.
 
-    Requires the AbletonMCP_Bridge M4L device to be loaded on any track.
+    Requires the AbletonBridge M4L device to be loaded on any track.
     """
     m4l = get_m4l_connection()
     result = m4l.send_command("get_cue_points")
@@ -5360,7 +5360,7 @@ def jump_to_cue_point(ctx: Context, cue_point_index: int) -> str:
     Parameters:
     - cue_point_index: The index of the cue point to jump to (use get_cue_points to see available indices)
 
-    Requires the AbletonMCP_Bridge M4L device to be loaded on any track.
+    Requires the AbletonBridge M4L device to be loaded on any track.
     """
     _validate_index(cue_point_index, "cue_point_index")
     m4l = get_m4l_connection()
@@ -5387,7 +5387,7 @@ def get_groove_pool(ctx: Context) -> str:
     Returns groove templates with their properties: base amount, timing, velocity,
     random, and quantize rate. Grooves affect the rhythmic feel of clips.
 
-    Requires the AbletonMCP_Bridge M4L device to be loaded on any track.
+    Requires the AbletonBridge M4L device to be loaded on any track.
     """
     m4l = get_m4l_connection()
     result = m4l.send_command("get_groove_pool")
@@ -5438,7 +5438,7 @@ def set_groove_properties(
 
     All property parameters are optional — only provided values will be changed.
 
-    Requires the AbletonMCP_Bridge M4L device to be loaded on any track.
+    Requires the AbletonBridge M4L device to be loaded on any track.
     """
     _validate_index(groove_index, "groove_index")
     properties = {}
@@ -5496,7 +5496,7 @@ def observe_property(ctx: Context, lom_path: str, property_name: str) -> str:
 
     Use get_property_changes() to retrieve accumulated changes.
 
-    Requires the AbletonMCP_Bridge M4L device to be loaded on any track.
+    Requires the AbletonBridge M4L device to be loaded on any track.
     """
     m4l = get_m4l_connection()
     result = m4l.send_command("observe_property", {
@@ -5519,7 +5519,7 @@ def stop_observing(ctx: Context, lom_path: str, property_name: str) -> str:
     - lom_path: The LOM path that was being observed
     - property_name: The property that was being watched
 
-    Requires the AbletonMCP_Bridge M4L device to be loaded on any track.
+    Requires the AbletonBridge M4L device to be loaded on any track.
     """
     m4l = get_m4l_connection()
     result = m4l.send_command("stop_observing", {
@@ -5546,7 +5546,7 @@ def get_property_changes(ctx: Context) -> str:
 
     Use observe_property() first to start monitoring properties.
 
-    Requires the AbletonMCP_Bridge M4L device to be loaded on any track.
+    Requires the AbletonBridge M4L device to be loaded on any track.
     """
     m4l = get_m4l_connection()
     result = m4l.send_command("get_observed_changes")
@@ -5598,7 +5598,7 @@ def set_parameter_clean(
     - parameter_index: The LOM parameter index (use discover_device_params to find indices)
     - value: The value to set (will be clamped to parameter min/max)
 
-    Requires the AbletonMCP_Bridge M4L device to be loaded on any track.
+    Requires the AbletonBridge M4L device to be loaded on any track.
     """
     _validate_index(track_index, "track_index")
     _validate_index(device_index, "device_index")
@@ -5638,7 +5638,7 @@ def analyze_track_audio(ctx: Context, track_index: int = -1) -> str:
                      the M4L bridge device is loaded. Use -2 for master track.
                      Any track index 0+ reads that track's meters remotely.
 
-    Requires the AbletonMCP_Bridge M4L device to be loaded on any track.
+    Requires the AbletonBridge M4L device to be loaded on any track.
     """
     m4l = get_m4l_connection()
     result = m4l.send_command("analyze_audio", {"track_index": track_index})
@@ -5679,7 +5679,7 @@ def analyze_track_spectrum(ctx: Context) -> str:
 
     If no spectral data is available, returns instructions for setting up the analysis.
 
-    Requires the AbletonMCP_Bridge M4L Audio Effect device to be loaded on a track.
+    Requires the AbletonBridge M4L Audio Effect device to be loaded on a track.
     """
     m4l = get_m4l_connection()
     result = m4l.send_command("analyze_spectrum")
@@ -5707,7 +5707,7 @@ def analyze_cross_track_audio(ctx: Context, track_index: int, wait_ms: int = 500
     master continues normally, and the send level is restored after capture.
 
     Requirements:
-    - The AbletonMCP_Bridge M4L Audio Effect device must be on a RETURN track
+    - The AbletonBridge M4L Audio Effect device must be on a RETURN track
     - Audio must be playing on the target track during analysis
     - The Max patch must have plugin~ -> fffb~ 8 -> abs~ -> snapshot~ -> [js] wired
       (abs~ after each fffb~ outlet is REQUIRED for correct amplitude values)
@@ -5777,7 +5777,7 @@ def get_ableton_version(ctx: Context) -> str:
     Returns major, minor, bugfix version numbers and display string.
     Useful for version-gating features (e.g. AB comparison requires Live 12.3+).
 
-    Requires the AbletonMCP_Bridge M4L device to be loaded on any track.
+    Requires the AbletonBridge M4L device to be loaded on any track.
     """
     m4l = get_m4l_connection()
     result = m4l.send_command("get_app_version")
@@ -5800,7 +5800,7 @@ def get_automation_states(ctx: Context, track_index: int, device_index: int) -> 
     Use this to check which parameters have automation before modifying them,
     or to detect overridden automation that may need re-enabling.
 
-    Requires the AbletonMCP_Bridge M4L device to be loaded on any track.
+    Requires the AbletonBridge M4L device to be loaded on any track.
 
     Parameters:
     - track_index: The index of the track containing the device
@@ -5829,7 +5829,7 @@ def discover_chains_m4l(ctx: Context, track_index: int, device_index: int, extra
 
     Use extra_path to navigate nested racks (e.g. "chains 0 devices 1").
 
-    Requires the AbletonMCP_Bridge M4L device to be loaded on any track.
+    Requires the AbletonBridge M4L device to be loaded on any track.
 
     Parameters:
     - track_index: The index of the track containing the rack device
@@ -5856,7 +5856,7 @@ def get_chain_device_params_m4l(ctx: Context, track_index: int, device_index: in
     Uses M4L bridge to access the full LOM parameter tree of a device nested
     inside a chain of a rack (Instrument Rack, Audio Effect Rack, Drum Rack, etc.).
 
-    Requires the AbletonMCP_Bridge M4L device to be loaded on any track.
+    Requires the AbletonBridge M4L device to be loaded on any track.
 
     Parameters:
     - track_index: The index of the track containing the rack
@@ -5888,7 +5888,7 @@ def set_chain_device_param_m4l(ctx: Context, track_index: int, device_index: int
     nested inside rack chains. Use get_chain_device_params_m4l() first to discover
     available parameters and their valid ranges.
 
-    Requires the AbletonMCP_Bridge M4L device to be loaded on any track.
+    Requires the AbletonBridge M4L device to be loaded on any track.
 
     Parameters:
     - track_index: The index of the track containing the rack
@@ -5930,7 +5930,7 @@ def get_clip_notes_with_ids(ctx: Context, track_index: int, clip_index: int) -> 
     Each note includes: note_id, pitch, start_time, duration, velocity, mute,
     probability, velocity_deviation, release_velocity.
 
-    Requires the AbletonMCP_Bridge M4L device. Live 11+ required for note IDs.
+    Requires the AbletonBridge M4L device. Live 11+ required for note IDs.
 
     Parameters:
     - track_index: The index of the track containing the clip
@@ -5958,7 +5958,7 @@ def modify_clip_notes(ctx: Context, track_index: int, clip_index: int, modificat
     Each modification dict must include 'note_id' and any properties to change:
     pitch, start_time, duration, velocity, mute, probability, velocity_deviation, release_velocity.
 
-    Requires the AbletonMCP_Bridge M4L device. Live 11+ required.
+    Requires the AbletonBridge M4L device. Live 11+ required.
 
     Parameters:
     - track_index: The index of the track containing the clip
@@ -5987,7 +5987,7 @@ def remove_clip_notes_by_id(ctx: Context, track_index: int, clip_index: int, not
     Surgical note removal — only removes the exact notes specified by ID.
     Use get_clip_notes_with_ids() first to get note IDs.
 
-    Requires the AbletonMCP_Bridge M4L device. Live 11+ required.
+    Requires the AbletonBridge M4L device. Live 11+ required.
 
     Parameters:
     - track_index: The index of the track containing the clip
@@ -6016,7 +6016,7 @@ def get_chain_mixing(ctx: Context, track_index: int, device_index: int, chain_in
     sends, plus the chain's mute and solo state. Critical for Drum Rack pad balancing
     and Instrument Rack chain mixing.
 
-    Requires the AbletonMCP_Bridge M4L device.
+    Requires the AbletonBridge M4L device.
 
     Parameters:
     - track_index: The index of the track containing the rack
@@ -6044,7 +6044,7 @@ def set_chain_mixing(ctx: Context, track_index: int, device_index: int, chain_in
     Set any combination of: volume, panning, chain_activator (1=active, 0=muted),
     mute (0/1), solo (0/1), sends (array of {index, value}).
 
-    Requires the AbletonMCP_Bridge M4L device.
+    Requires the AbletonBridge M4L device.
 
     Parameters:
     - track_index: The index of the track containing the rack
@@ -6079,7 +6079,7 @@ def device_ab_compare(ctx: Context, track_index: int, device_index: int, action:
     - 'save': Save current device state to the other AB slot
     - 'toggle': Toggle between A and B presets
 
-    Requires the AbletonMCP_Bridge M4L device and Ableton Live 12.3+.
+    Requires the AbletonBridge M4L device and Ableton Live 12.3+.
 
     Parameters:
     - track_index: The index of the track containing the device
@@ -6113,7 +6113,7 @@ def clip_scrub(ctx: Context, track_index: int, clip_index: int, action: str, bea
     - 'scrub': Start scrubbing at the given beat_time (continues until stop_scrub)
     - 'stop_scrub': Stop scrubbing
 
-    Requires the AbletonMCP_Bridge M4L device.
+    Requires the AbletonBridge M4L device.
 
     Parameters:
     - track_index: The index of the track containing the clip
@@ -6145,7 +6145,7 @@ def get_split_stereo(ctx: Context, track_index: int) -> str:
     from the track's mixer_device. These control independent L/R panning when
     split stereo mode is enabled.
 
-    Requires the AbletonMCP_Bridge M4L device.
+    Requires the AbletonBridge M4L device.
 
     Parameters:
     - track_index: The index of the track
@@ -6167,7 +6167,7 @@ def set_split_stereo(ctx: Context, track_index: int, left: float, right: float) 
     Sets the Left Split Stereo and Right Split Stereo DeviceParameter values
     on the track's mixer_device.
 
-    Requires the AbletonMCP_Bridge M4L device.
+    Requires the AbletonBridge M4L device.
 
     Parameters:
     - track_index: The index of the track
