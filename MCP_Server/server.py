@@ -2552,6 +2552,20 @@ def delete_scene(ctx: Context, scene_index: int) -> str:
     return f"Deleted scene '{result.get('scene_name', 'unknown')}' at index {scene_index}"
 
 @mcp.tool()
+@_tool_handler("duplicating scene")
+def duplicate_scene(ctx: Context, scene_index: int) -> str:
+    """
+    Duplicate a scene in the session, creating a copy with all its clips.
+
+    Parameters:
+    - scene_index: The index of the scene to duplicate
+    """
+    _validate_index(scene_index, "scene_index")
+    ableton = get_ableton_connection()
+    result = ableton.send_command("duplicate_scene", {"scene_index": scene_index})
+    return f"Duplicated scene at index {scene_index}"
+
+@mcp.tool()
 @_tool_handler("getting clip info")
 def get_clip_info(ctx: Context, track_index: int, clip_index: int) -> str:
     """
@@ -4071,12 +4085,234 @@ DEVICE_PROPERTIES: Dict[str, Dict[str, Dict[str, Any]]] = {
         },
     },
 
-    # Future devices will be added here:
-    # "Drift": { ... },
-    # "Operator": { ... },
-    # "OriginalSimpler": { ... },
-    # "Analog": { ... },
-    # "InstrumentImpulse": { ... },
+    # ===== Drift (DriftDevice) =================================================
+    "DriftDevice": {
+        # --- Voice ---
+        "voice_mode_index": {
+            "description": "Voice mode (mono/poly)",
+            "type": "int", "min": 0,
+            "note": "Use voice_mode_list to get available mode names",
+        },
+        "voice_mode_list": {
+            "description": "Available voice mode names",
+            "type": "list", "readonly": True,
+        },
+        "voice_count_index": {
+            "description": "Voice count setting",
+            "type": "int", "min": 0,
+            "note": "Use voice_count_list to get available counts",
+        },
+        "voice_count_list": {
+            "description": "Available voice count settings",
+            "type": "list", "readonly": True,
+        },
+        "pitch_bend_range": {
+            "description": "MIDI pitch bend range in semitones",
+            "type": "int", "min": 0, "max": 48,
+        },
+
+        # --- Modulation Matrix ---
+        "mod_matrix_filter_source_1_index": {
+            "description": "Filter frequency mod source 1 index",
+            "type": "int", "min": 0,
+        },
+        "mod_matrix_filter_source_1_list": {
+            "description": "Available filter mod source 1 names",
+            "type": "list", "readonly": True,
+        },
+        "mod_matrix_filter_source_2_index": {
+            "description": "Filter frequency mod source 2 index",
+            "type": "int", "min": 0,
+        },
+        "mod_matrix_filter_source_2_list": {
+            "description": "Available filter mod source 2 names",
+            "type": "list", "readonly": True,
+        },
+        "mod_matrix_lfo_source_index": {
+            "description": "LFO amount mod source index",
+            "type": "int", "min": 0,
+        },
+        "mod_matrix_lfo_source_list": {
+            "description": "Available LFO mod source names",
+            "type": "list", "readonly": True,
+        },
+        "mod_matrix_pitch_source_1_index": {
+            "description": "Pitch mod source 1 index",
+            "type": "int", "min": 0,
+        },
+        "mod_matrix_pitch_source_1_list": {
+            "description": "Available pitch mod source 1 names",
+            "type": "list", "readonly": True,
+        },
+        "mod_matrix_pitch_source_2_index": {
+            "description": "Pitch mod source 2 index",
+            "type": "int", "min": 0,
+        },
+        "mod_matrix_pitch_source_2_list": {
+            "description": "Available pitch mod source 2 names",
+            "type": "list", "readonly": True,
+        },
+        "mod_matrix_shape_source_index": {
+            "description": "Shape mod source index",
+            "type": "int", "min": 0,
+        },
+        "mod_matrix_shape_source_list": {
+            "description": "Available shape mod source names",
+            "type": "list", "readonly": True,
+        },
+        "mod_matrix_source_1_index": {
+            "description": "Custom mod slot 1 source index",
+            "type": "int", "min": 0,
+        },
+        "mod_matrix_source_1_list": {
+            "description": "Available custom mod slot 1 source names",
+            "type": "list", "readonly": True,
+        },
+        "mod_matrix_source_2_index": {
+            "description": "Custom mod slot 2 source index",
+            "type": "int", "min": 0,
+        },
+        "mod_matrix_source_2_list": {
+            "description": "Available custom mod slot 2 source names",
+            "type": "list", "readonly": True,
+        },
+        "mod_matrix_source_3_index": {
+            "description": "Custom mod slot 3 source index",
+            "type": "int", "min": 0,
+        },
+        "mod_matrix_source_3_list": {
+            "description": "Available custom mod slot 3 source names",
+            "type": "list", "readonly": True,
+        },
+        "mod_matrix_target_1_index": {
+            "description": "Custom mod slot 1 target index",
+            "type": "int", "min": 0,
+        },
+        "mod_matrix_target_1_list": {
+            "description": "Available custom mod slot 1 target names",
+            "type": "list", "readonly": True,
+        },
+        "mod_matrix_target_2_index": {
+            "description": "Custom mod slot 2 target index",
+            "type": "int", "min": 0,
+        },
+        "mod_matrix_target_2_list": {
+            "description": "Available custom mod slot 2 target names",
+            "type": "list", "readonly": True,
+        },
+        "mod_matrix_target_3_index": {
+            "description": "Custom mod slot 3 target index",
+            "type": "int", "min": 0,
+        },
+        "mod_matrix_target_3_list": {
+            "description": "Available custom mod slot 3 target names",
+            "type": "list", "readonly": True,
+        },
+    },
+
+    # ===== Meld (MeldDevice) ===================================================
+    "MeldDevice": {
+        "selected_engine": {
+            "description": "Oscillator engine selector",
+            "type": "enum",
+            "values": {0: "Engine A", 1: "Engine B"},
+        },
+        "unison_voices": {
+            "description": "Unison voice count",
+            "type": "enum",
+            "values": {0: "Off", 1: "2", 2: "3", 3: "4"},
+        },
+        "mono_poly": {
+            "description": "Mono/Poly voice mode",
+            "type": "enum",
+            "values": {0: "Mono", 1: "Poly"},
+        },
+        "poly_voices": {
+            "description": "Polyphony voice count",
+            "type": "enum",
+            "values": {
+                0: "2", 1: "3", 2: "4", 3: "5",
+                4: "6", 5: "8", 6: "12",
+            },
+        },
+    },
+
+    # ===== Roar (RoarDevice) ===================================================
+    "RoarDevice": {
+        "routing_mode_index": {
+            "description": "Routing mode used by Roar",
+            "type": "int", "min": 0,
+            "note": "Use routing_mode_list to get available mode names",
+        },
+        "routing_mode_list": {
+            "description": "Available routing mode names",
+            "type": "list", "readonly": True,
+        },
+        "env_listen": {
+            "description": "Envelope Input Listen toggle",
+            "type": "enum",
+            "values": {0: "Off", 1: "On"},
+        },
+    },
+
+    # ===== Spectral Resonator (SpectralResonatorDevice) ========================
+    "SpectralResonatorDevice": {
+        "frequency_dial_mode": {
+            "description": "Freq control mode",
+            "type": "enum",
+            "values": {0: "Hertz", 1: "MIDI Note"},
+        },
+        "midi_gate": {
+            "description": "MIDI gate switch",
+            "type": "enum",
+            "values": {0: "Off", 1: "On"},
+        },
+        "mod_mode": {
+            "description": "Modulation mode",
+            "type": "enum",
+            "values": {0: "None", 1: "Chorus", 2: "Wander", 3: "Granular"},
+        },
+        "mono_poly": {
+            "description": "Mono/Poly switch",
+            "type": "enum",
+            "values": {0: "Mono", 1: "Poly"},
+        },
+        "pitch_mode": {
+            "description": "Pitch mode",
+            "type": "enum",
+            "values": {0: "Internal", 1: "MIDI"},
+        },
+        "pitch_bend_range": {
+            "description": "Pitch bend range in semitones",
+            "type": "int", "min": 0, "max": 48,
+        },
+        "polyphony": {
+            "description": "Polyphony voice count",
+            "type": "enum",
+            "values": {0: "2", 1: "4", 2: "8", 3: "16"},
+        },
+    },
+
+    # ===== Shifter (ShifterDevice) =============================================
+    "ShifterDevice": {
+        "pitch_bend_range": {
+            "description": "Pitch bend range for MIDI pitch mode",
+            "type": "int", "min": 0, "max": 48,
+        },
+        "pitch_mode_index": {
+            "description": "Pitch mode",
+            "type": "enum",
+            "values": {0: "Internal", 1: "MIDI"},
+        },
+    },
+
+    # ===== Drum Cell (DrumCellDevice) ==========================================
+    "DrumCellDevice": {
+        "gain": {
+            "description": "Sample gain (normalized value)",
+            "type": "float", "min": 0.0, "max": 1.0,
+        },
+    },
 }
 
 
@@ -9821,12 +10057,12 @@ def humanize_notes(ctx: Context, track_index: int, clip_index: int,
         return "No notes found in clip to humanize"
 
     # Remove existing notes
-    ableton.send_command("remove_notes", {
+    ableton.send_command("remove_notes_range", {
         "track_index": track_index,
         "clip_index": clip_index,
-        "start_time": 0.0,
+        "from_time": 0.0,
         "time_span": 999999.0,
-        "start_pitch": 0,
+        "from_pitch": 0,
         "pitch_span": 128,
     })
 
@@ -9971,10 +10207,10 @@ def transform_notes(ctx: Context, track_index: int, clip_index: int,
         return "No notes found to transform"
 
     # Remove old notes
-    ableton.send_command("remove_notes", {
+    ableton.send_command("remove_notes_range", {
         "track_index": track_index, "clip_index": clip_index,
-        "start_time": 0.0, "time_span": 999999.0,
-        "start_pitch": 0, "pitch_span": 128,
+        "from_time": 0.0, "time_span": 999999.0,
+        "from_pitch": 0, "pitch_span": 128,
     })
 
     if operation == "transpose":
@@ -10280,11 +10516,11 @@ def create_automation_curve(ctx: Context, track_index: int, clip_index: int,
         value = max(0.0, min(1.0, value))
         automation_points.append({"time": time, "value": value})
 
-    ableton.send_command("add_automation_points", {
+    ableton.send_command("create_clip_automation", {
         "track_index": track_index,
         "clip_index": clip_index,
         "parameter_name": parameter_name,
-        "points": automation_points,
+        "automation_points": automation_points,
     })
 
     return f"Created {curve_type} automation curve ({points} points) for '{parameter_name}' on track {track_index} clip {clip_index}"
@@ -10486,6 +10722,671 @@ def duplicate_with_variation(ctx: Context, src_track: int, src_clip: int,
     })
 
     return f"Duplicated {len(varied)} notes from track {src_track} clip {src_clip} to track {dest_track} clip {dest_clip} with variation"
+
+
+@mcp.tool()
+@_tool_handler("generating chord progression")
+def generate_chord_progression(ctx: Context, track_index: int, clip_index: int,
+                                  root: int = 60, scale_name: str = "major",
+                                  progression: str = "I,V,vi,IV",
+                                  note_length: float = 4.0,
+                                  velocity: int = 90, voicing: str = "close") -> str:
+    """Generate a chord progression and write it to a MIDI clip.
+
+    Parameters:
+    - track_index: The MIDI track index
+    - clip_index: The clip slot index (clip must exist)
+    - root: Root MIDI note (default: 60 = C4)
+    - scale_name: Scale type: "major", "minor", "dorian", "mixolydian", "harmonic_minor"
+    - progression: Comma-separated Roman numeral chord symbols, e.g. "I,V,vi,IV"
+      Supported: I, ii, iii, IV, V, vi, vii (major scale degrees)
+      Uppercase = major triad, lowercase = minor triad
+      Suffix "7" for seventh chords (e.g. "V7", "ii7")
+    - note_length: Duration per chord in beats (default: 4.0 = one bar)
+    - velocity: Note velocity (default: 90)
+    - voicing: "close" (root position, default), "spread" (notes across octaves), "drop2" (drop-2 voicing)
+    """
+    _validate_index(track_index, "track_index")
+    _validate_index(clip_index, "clip_index")
+    _validate_range(velocity, "velocity", 1, 127)
+
+    scales = {
+        "major": [0, 2, 4, 5, 7, 9, 11],
+        "minor": [0, 2, 3, 5, 7, 8, 10],
+        "dorian": [0, 2, 3, 5, 7, 9, 10],
+        "mixolydian": [0, 2, 4, 5, 7, 9, 10],
+        "harmonic_minor": [0, 2, 3, 5, 7, 8, 11],
+    }
+    if scale_name not in scales:
+        raise ValueError(f"Unknown scale '{scale_name}'. Available: {', '.join(scales.keys())}")
+
+    intervals = scales[scale_name]
+
+    # Map Roman numerals to scale degrees (0-indexed)
+    numeral_map = {
+        "I": 0, "i": 0, "II": 1, "ii": 1, "III": 2, "iii": 2,
+        "IV": 3, "iv": 3, "V": 4, "v": 4, "VI": 5, "vi": 5,
+        "VII": 6, "vii": 6,
+    }
+
+    def build_chord(degree_str):
+        has_seventh = degree_str.endswith("7")
+        numeral = degree_str.rstrip("7")
+        degree = numeral_map.get(numeral)
+        if degree is None:
+            raise ValueError(f"Unknown chord numeral '{degree_str}'")
+        is_minor = numeral[0].islower()
+
+        # Get scale tone for this degree
+        root_interval = intervals[degree % len(intervals)]
+
+        # Build chord intervals (major or minor triad)
+        if is_minor:
+            chord_intervals = [0, 3, 7]
+            if has_seventh:
+                chord_intervals.append(10)  # minor 7th
+        else:
+            chord_intervals = [0, 4, 7]
+            if has_seventh:
+                chord_intervals.append(11 if degree == 4 else 10)  # dominant 7th for V, minor 7th otherwise
+
+        return [root_interval + ci for ci in chord_intervals]
+
+    chord_symbols = [c.strip() for c in progression.split(",") if c.strip()]
+    notes = []
+    for i, symbol in enumerate(chord_symbols):
+        chord_intervals = build_chord(symbol)
+        start_time = i * note_length
+
+        for j, interval in enumerate(chord_intervals):
+            pitch = root + interval
+            if voicing == "spread" and j > 0:
+                pitch += (j % 2) * 12  # alternate octaves
+            elif voicing == "drop2" and j == 1 and len(chord_intervals) >= 3:
+                pitch -= 12  # drop second voice down an octave
+
+            pitch = max(0, min(127, pitch))
+            notes.append({
+                "pitch": pitch,
+                "start_time": start_time,
+                "duration": note_length,
+                "velocity": int(velocity),
+            })
+
+    ableton = get_ableton_connection()
+    ableton.send_command("add_notes_to_clip", {
+        "track_index": track_index,
+        "clip_index": clip_index,
+        "notes": notes,
+    })
+
+    return f"Generated {len(chord_symbols)}-chord progression ({progression}) with {len(notes)} notes on track {track_index} clip {clip_index}"
+
+
+@mcp.tool()
+@_tool_handler("generating arpeggio")
+def generate_arpeggio(ctx: Context, track_index: int, clip_index: int,
+                         root: int = 60, chord_type: str = "major",
+                         pattern: str = "up", octaves: int = 2,
+                         note_length: float = 0.25, clip_length: float = 4.0,
+                         velocity: int = 100, gate: float = 0.8) -> str:
+    """Generate an arpeggio pattern and write it to a MIDI clip.
+
+    Parameters:
+    - track_index: The MIDI track index
+    - clip_index: The clip slot index (clip must exist)
+    - root: Root MIDI note (default: 60 = C4)
+    - chord_type: "major", "minor", "7th", "min7", "maj7", "dim", "aug", "sus4", "sus2"
+    - pattern: "up", "down", "up_down", "down_up", "random", "played" (as defined order)
+    - octaves: How many octaves to span (default: 2)
+    - note_length: Duration per note in beats (default: 0.25 = 16th note)
+    - clip_length: Total clip length in beats (default: 4.0)
+    - velocity: Base velocity (default: 100)
+    - gate: Note gate as fraction of note_length (default: 0.8)
+    """
+    _validate_index(track_index, "track_index")
+    _validate_index(clip_index, "clip_index")
+    _validate_range(velocity, "velocity", 1, 127)
+    _validate_range(gate, "gate", 0.1, 1.0)
+
+    chord_intervals = {
+        "major": [0, 4, 7],
+        "minor": [0, 3, 7],
+        "7th": [0, 4, 7, 10],
+        "min7": [0, 3, 7, 10],
+        "maj7": [0, 4, 7, 11],
+        "dim": [0, 3, 6],
+        "aug": [0, 4, 8],
+        "sus4": [0, 5, 7],
+        "sus2": [0, 2, 7],
+    }
+    if chord_type not in chord_intervals:
+        raise ValueError(f"Unknown chord_type '{chord_type}'. Available: {', '.join(chord_intervals.keys())}")
+
+    # Build pitches across octaves
+    base_intervals = chord_intervals[chord_type]
+    pitches = []
+    for oct in range(octaves):
+        for interval in base_intervals:
+            p = root + oct * 12 + interval
+            if 0 <= p <= 127:
+                pitches.append(p)
+
+    if not pitches:
+        raise ValueError("No valid pitches in range")
+
+    import random
+
+    # Apply pattern
+    if pattern == "up":
+        sequence = pitches
+    elif pattern == "down":
+        sequence = list(reversed(pitches))
+    elif pattern == "up_down":
+        sequence = pitches + list(reversed(pitches[1:-1])) if len(pitches) > 2 else pitches
+    elif pattern == "down_up":
+        rev = list(reversed(pitches))
+        sequence = rev + pitches[1:-1] if len(pitches) > 2 else rev
+    elif pattern == "random":
+        sequence = pitches[:]
+        random.shuffle(sequence)
+    else:  # "played" or unknown
+        sequence = pitches
+
+    # Fill clip_length by repeating sequence
+    notes = []
+    total_steps = int(clip_length / note_length)
+    for i in range(total_steps):
+        pitch = sequence[i % len(sequence)]
+        notes.append({
+            "pitch": pitch,
+            "start_time": i * note_length,
+            "duration": note_length * gate,
+            "velocity": int(velocity),
+        })
+
+    ableton = get_ableton_connection()
+    ableton.send_command("add_notes_to_clip", {
+        "track_index": track_index,
+        "clip_index": clip_index,
+        "notes": notes,
+    })
+
+    return f"Generated {pattern} arpeggio ({chord_type}, {octaves} octaves) with {len(notes)} notes on track {track_index} clip {clip_index}"
+
+
+@mcp.tool()
+@_tool_handler("generating drum pattern")
+def generate_drum_pattern(ctx: Context, track_index: int, clip_index: int,
+                             style: str = "basic_rock",
+                             clip_length: float = 4.0,
+                             velocity: int = 100,
+                             swing: float = 0.0) -> str:
+    """Generate a drum pattern and write it to a MIDI clip on a Drum Rack track.
+
+    Uses General MIDI drum mapping (kick=36, snare=38, hihat=42, open_hat=46,
+    ride=51, crash=49, tom_low=45, tom_mid=47, tom_hi=50, clap=39, rim=37).
+
+    Parameters:
+    - track_index: The MIDI track index (should have a Drum Rack)
+    - clip_index: The clip slot index (clip must exist)
+    - style: Pattern style:
+        "basic_rock" — standard 4/4 rock beat
+        "house" — four-on-the-floor house
+        "hiphop" — boom bap hip-hop
+        "dnb" — drum and bass breakbeat
+        "halftime" — half-time groove
+        "jazz_ride" — jazz ride pattern
+        "latin" — Latin percussion pattern
+        "trap" — trap hi-hat pattern
+    - clip_length: Total clip length in beats (default: 4.0)
+    - velocity: Base velocity (default: 100)
+    - swing: Swing amount 0.0-1.0, shifts offbeat notes late (default: 0.0)
+    """
+    _validate_index(track_index, "track_index")
+    _validate_index(clip_index, "clip_index")
+    _validate_range(velocity, "velocity", 1, 127)
+    _validate_range(swing, "swing", 0.0, 1.0)
+
+    KICK, SNARE, HIHAT, OPEN_HAT = 36, 38, 42, 46
+    RIDE, CRASH, CLAP, RIM = 51, 49, 39, 37
+    TOM_LO, TOM_MID, TOM_HI = 45, 47, 50
+
+    # Define patterns as (pitch, [beat positions], velocity_ratio, duration)
+    patterns = {
+        "basic_rock": [
+            (KICK,    [0.0, 2.0],           1.0, 0.25),
+            (SNARE,   [1.0, 3.0],           1.0, 0.25),
+            (HIHAT,   [i * 0.5 for i in range(8)], 0.7, 0.125),
+        ],
+        "house": [
+            (KICK,    [0.0, 1.0, 2.0, 3.0], 1.0, 0.25),
+            (CLAP,    [1.0, 3.0],           0.9, 0.25),
+            (OPEN_HAT,[0.5, 1.5, 2.5, 3.5], 0.6, 0.25),
+            (HIHAT,   [i * 0.25 for i in range(16)], 0.5, 0.0625),
+        ],
+        "hiphop": [
+            (KICK,    [0.0, 0.75, 2.0, 2.5], 1.0, 0.25),
+            (SNARE,   [1.0, 3.0],           1.0, 0.25),
+            (HIHAT,   [i * 0.5 for i in range(8)], 0.65, 0.125),
+        ],
+        "dnb": [
+            (KICK,    [0.0, 1.75],          1.0, 0.25),
+            (SNARE,   [1.0, 3.0],           1.0, 0.25),
+            (HIHAT,   [i * 0.25 for i in range(16)], 0.6, 0.0625),
+        ],
+        "halftime": [
+            (KICK,    [0.0],                1.0, 0.25),
+            (SNARE,   [2.0],                1.0, 0.25),
+            (HIHAT,   [i * 0.5 for i in range(8)], 0.6, 0.125),
+        ],
+        "jazz_ride": [
+            (RIDE,    [0.0, 0.67, 1.0, 1.67, 2.0, 2.67, 3.0, 3.67], 0.7, 0.25),
+            (KICK,    [0.0, 2.5],           0.5, 0.25),
+            (HIHAT,   [1.0, 3.0],           0.4, 0.125),
+        ],
+        "latin": [
+            (KICK,    [0.0, 1.5, 3.0],      1.0, 0.25),
+            (RIM,     [0.5, 1.0, 2.5, 3.0], 0.8, 0.125),
+            (HIHAT,   [i * 0.25 for i in range(16)], 0.5, 0.0625),
+            (OPEN_HAT,[1.5, 3.5],           0.7, 0.25),
+        ],
+        "trap": [
+            (KICK,    [0.0, 0.75, 2.0],     1.0, 0.25),
+            (SNARE,   [1.0, 3.0],           1.0, 0.25),
+            (HIHAT,   [i * 0.125 for i in range(32)], 0.55, 0.0625),
+            (OPEN_HAT,[1.75, 3.75],         0.7, 0.125),
+        ],
+    }
+
+    if style not in patterns:
+        raise ValueError(f"Unknown style '{style}'. Available: {', '.join(patterns.keys())}")
+
+    notes = []
+    swing_offset = swing * 0.08  # max 80ms-ish swing
+
+    for pitch, positions, vel_ratio, duration in patterns[style]:
+        for pos in positions:
+            if pos >= clip_length:
+                continue
+            actual_pos = pos
+            # Apply swing to offbeat 16th notes
+            if swing > 0 and (pos * 4) % 2 == 1:
+                actual_pos += swing_offset
+
+            notes.append({
+                "pitch": pitch,
+                "start_time": actual_pos,
+                "duration": duration,
+                "velocity": max(1, min(127, int(velocity * vel_ratio))),
+            })
+
+    ableton = get_ableton_connection()
+    ableton.send_command("add_notes_to_clip", {
+        "track_index": track_index,
+        "clip_index": clip_index,
+        "notes": notes,
+    })
+
+    return f"Generated {style} drum pattern with {len(notes)} hits on track {track_index} clip {clip_index}"
+
+
+@mcp.tool()
+@_tool_handler("generating euclidean rhythm")
+def euclidean_rhythm(ctx: Context, track_index: int, clip_index: int,
+                        hits: int = 5, steps: int = 8, pitch: int = 36,
+                        rotation: int = 0, note_length: float = 0.5,
+                        velocity: int = 100) -> str:
+    """Generate a Euclidean rhythm pattern and write it to a MIDI clip.
+
+    Euclidean rhythms distribute N hits as evenly as possible across M steps.
+    Many traditional rhythms (Tresillo, Son clave, Bossa nova) are Euclidean.
+
+    Parameters:
+    - track_index: The MIDI track index
+    - clip_index: The clip slot index (clip must exist)
+    - hits: Number of active hits (default: 5)
+    - steps: Total number of steps (default: 8)
+    - pitch: MIDI note (default: 36 = kick)
+    - rotation: Rotate the pattern by N steps (default: 0)
+    - note_length: Duration of each step in beats (default: 0.5 = 8th notes)
+    - velocity: Note velocity (default: 100)
+    """
+    _validate_index(track_index, "track_index")
+    _validate_index(clip_index, "clip_index")
+    _validate_range(velocity, "velocity", 1, 127)
+
+    if hits > steps:
+        raise ValueError(f"hits ({hits}) cannot exceed steps ({steps})")
+    if steps < 1:
+        raise ValueError("steps must be >= 1")
+
+    # Bjorklund algorithm
+    def bjorklund(hits, steps):
+        if hits == 0:
+            return [0] * steps
+        if hits == steps:
+            return [1] * steps
+
+        groups = [[1] for _ in range(hits)] + [[0] for _ in range(steps - hits)]
+        while True:
+            remainder = len(groups) - hits
+            if remainder <= 1:
+                break
+            new_groups = []
+            take = min(hits, remainder)
+            for i in range(take):
+                new_groups.append(groups[i] + groups[hits + i])
+            for i in range(take, hits):
+                new_groups.append(groups[i])
+            for i in range(hits + take, len(groups)):
+                new_groups.append(groups[i])
+            groups = new_groups
+            hits = take if take < hits else hits
+
+        pattern = []
+        for g in groups:
+            pattern.extend(g)
+        return pattern
+
+    pattern = bjorklund(hits, steps)
+
+    # Apply rotation
+    if rotation != 0:
+        r = rotation % len(pattern)
+        pattern = pattern[r:] + pattern[:r]
+
+    notes = []
+    for i, active in enumerate(pattern):
+        if active:
+            notes.append({
+                "pitch": int(pitch),
+                "start_time": i * note_length,
+                "duration": note_length * 0.8,
+                "velocity": int(velocity),
+            })
+
+    ableton = get_ableton_connection()
+    ableton.send_command("add_notes_to_clip", {
+        "track_index": track_index,
+        "clip_index": clip_index,
+        "notes": notes,
+    })
+
+    pattern_str = "".join("x" if p else "." for p in pattern)
+    return f"Generated Euclidean rhythm E({hits},{steps}) [{pattern_str}] with {len(notes)} notes on track {track_index} clip {clip_index}"
+
+
+@mcp.tool()
+@_tool_handler("generating bass line")
+def generate_bass_line(ctx: Context, track_index: int, clip_index: int,
+                          root: int = 36, scale_name: str = "minor",
+                          pattern_type: str = "root_fifth",
+                          note_length: float = 0.5,
+                          clip_length: float = 4.0,
+                          velocity: int = 100,
+                          octave_range: int = 1) -> str:
+    """Generate a bass line pattern following a root note and scale.
+
+    Parameters:
+    - track_index: The MIDI track index
+    - clip_index: The clip slot index (clip must exist)
+    - root: Root MIDI note (default: 36 = C2)
+    - scale_name: "major", "minor", "dorian", "mixolydian", "pentatonic", "blues"
+    - pattern_type:
+        "root_fifth" — alternates root and fifth
+        "walking" — stepwise walking bass
+        "octave" — root with octave jumps
+        "arpeggiated" — arpeggiate chord tones
+        "syncopated" — syncopated funk-style pattern
+    - note_length: Duration per note in beats (default: 0.5)
+    - clip_length: Total clip length in beats (default: 4.0)
+    - velocity: Base velocity (default: 100)
+    - octave_range: Octave range above root (default: 1)
+    """
+    _validate_index(track_index, "track_index")
+    _validate_index(clip_index, "clip_index")
+    _validate_range(velocity, "velocity", 1, 127)
+    import random
+
+    scales = {
+        "major": [0, 2, 4, 5, 7, 9, 11],
+        "minor": [0, 2, 3, 5, 7, 8, 10],
+        "dorian": [0, 2, 3, 5, 7, 9, 10],
+        "mixolydian": [0, 2, 4, 5, 7, 9, 10],
+        "pentatonic": [0, 3, 5, 7, 10],
+        "blues": [0, 3, 5, 6, 7, 10],
+    }
+    if scale_name not in scales:
+        raise ValueError(f"Unknown scale '{scale_name}'. Available: {', '.join(scales.keys())}")
+
+    intervals = scales[scale_name]
+    pitches = []
+    for oct in range(octave_range + 1):
+        for iv in intervals:
+            p = root + oct * 12 + iv
+            if 0 <= p <= 127:
+                pitches.append(p)
+
+    total_steps = int(clip_length / note_length)
+    notes = []
+
+    if pattern_type == "root_fifth":
+        fifth = root + 7
+        for i in range(total_steps):
+            p = root if i % 2 == 0 else fifth
+            notes.append({"pitch": p, "start_time": i * note_length,
+                          "duration": note_length * 0.9, "velocity": int(velocity)})
+    elif pattern_type == "walking":
+        idx = 0
+        direction = 1
+        for i in range(total_steps):
+            notes.append({"pitch": pitches[idx], "start_time": i * note_length,
+                          "duration": note_length * 0.9, "velocity": int(velocity)})
+            idx += direction
+            if idx >= len(pitches) - 1:
+                direction = -1
+            elif idx <= 0:
+                direction = 1
+    elif pattern_type == "octave":
+        for i in range(total_steps):
+            p = root if i % 2 == 0 else root + 12
+            notes.append({"pitch": max(0, min(127, p)), "start_time": i * note_length,
+                          "duration": note_length * 0.8, "velocity": int(velocity)})
+    elif pattern_type == "arpeggiated":
+        chord_tones = [pitches[0], pitches[2] if len(pitches) > 2 else pitches[0],
+                       pitches[4] if len(pitches) > 4 else pitches[-1]]
+        for i in range(total_steps):
+            p = chord_tones[i % len(chord_tones)]
+            notes.append({"pitch": p, "start_time": i * note_length,
+                          "duration": note_length * 0.8, "velocity": int(velocity)})
+    elif pattern_type == "syncopated":
+        positions = [0.0, 0.75, 1.5, 2.0, 2.75, 3.5]
+        for pos in positions:
+            if pos >= clip_length:
+                continue
+            p = random.choice(pitches[:5]) if len(pitches) >= 5 else random.choice(pitches)
+            notes.append({"pitch": p, "start_time": pos,
+                          "duration": note_length * 0.9,
+                          "velocity": max(1, min(127, int(velocity * random.uniform(0.8, 1.0))))})
+    else:
+        raise ValueError(f"Unknown pattern_type '{pattern_type}'")
+
+    ableton = get_ableton_connection()
+    ableton.send_command("add_notes_to_clip", {
+        "track_index": track_index,
+        "clip_index": clip_index,
+        "notes": notes,
+    })
+
+    return f"Generated {pattern_type} bass line ({scale_name}) with {len(notes)} notes on track {track_index} clip {clip_index}"
+
+
+@mcp.tool()
+@_tool_handler("harmonizing melody")
+def harmonize_melody(ctx: Context, track_index: int, clip_index: int,
+                        interval: str = "3rd", scale_name: str = "major",
+                        root: int = 60, direction: str = "below") -> str:
+    """Add harmony notes to an existing melody, constrained to a scale.
+
+    Reads existing notes from the clip and adds a harmony note for each,
+    snapped to the nearest scale degree at the specified interval.
+
+    Parameters:
+    - track_index: The MIDI track index
+    - clip_index: The clip slot index (must contain MIDI notes)
+    - interval: Harmony interval: "3rd", "5th", "6th", "octave"
+    - scale_name: "major", "minor", "dorian", "mixolydian", "harmonic_minor"
+    - root: Root note of the scale (default: 60 = C4)
+    - direction: "below" (harmony below melody) or "above"
+    """
+    _validate_index(track_index, "track_index")
+    _validate_index(clip_index, "clip_index")
+
+    interval_map = {"3rd": 2, "5th": 4, "6th": 5, "octave": 7}
+    if interval not in interval_map:
+        raise ValueError(f"Unknown interval '{interval}'. Available: {', '.join(interval_map.keys())}")
+
+    scales = {
+        "major": [0, 2, 4, 5, 7, 9, 11],
+        "minor": [0, 2, 3, 5, 7, 8, 10],
+        "dorian": [0, 2, 3, 5, 7, 9, 10],
+        "mixolydian": [0, 2, 4, 5, 7, 9, 10],
+        "harmonic_minor": [0, 2, 3, 5, 7, 8, 11],
+    }
+    if scale_name not in scales:
+        raise ValueError(f"Unknown scale '{scale_name}'. Available: {', '.join(scales.keys())}")
+
+    intervals = scales[scale_name]
+    scale_degrees = interval_map[interval]
+
+    # Build full pitch→scale_degree lookup
+    def pitch_to_scale_index(pitch):
+        pc = (pitch - root) % 12
+        # Find closest scale tone
+        best = min(intervals, key=lambda x: abs(x - pc))
+        return intervals.index(best)
+
+    def scale_index_to_pitch(pitch, offset):
+        pc = (pitch - root) % 12
+        octave = (pitch - root) // 12
+        idx = pitch_to_scale_index(pitch)
+
+        new_idx = idx + (offset if direction == "above" else -offset)
+        new_octave = octave + new_idx // len(intervals)
+        new_idx = new_idx % len(intervals)
+
+        return root + new_octave * 12 + intervals[new_idx]
+
+    ableton = get_ableton_connection()
+    clip_notes = ableton.send_command("get_clip_notes", {
+        "track_index": track_index, "clip_index": clip_index,
+        "start_time": 0.0, "time_span": 0.0,
+        "start_pitch": 0, "pitch_span": 128,
+    })
+
+    notes = clip_notes.get("notes", [])
+    if not notes:
+        return "No notes found to harmonize"
+
+    harmony_notes = []
+    for note in notes:
+        harmony_pitch = scale_index_to_pitch(note["pitch"], scale_degrees)
+        harmony_pitch = max(0, min(127, harmony_pitch))
+        harmony_notes.append({
+            "pitch": harmony_pitch,
+            "start_time": note["start_time"],
+            "duration": note["duration"],
+            "velocity": max(1, int(note["velocity"] * 0.85)),
+        })
+
+    ableton.send_command("add_notes_to_clip", {
+        "track_index": track_index,
+        "clip_index": clip_index,
+        "notes": harmony_notes,
+    })
+
+    return f"Added {len(harmony_notes)} harmony notes ({interval} {direction}, {scale_name}) on track {track_index} clip {clip_index}"
+
+
+@mcp.tool()
+@_tool_handler("quantizing notes to scale")
+def quantize_to_scale(ctx: Context, track_index: int, clip_index: int,
+                         root: int = 60, scale_name: str = "major") -> str:
+    """Snap all notes in a MIDI clip to the nearest note in a musical scale.
+
+    Out-of-scale notes are moved to the closest scale degree. Notes already
+    in the scale are left unchanged.
+
+    Parameters:
+    - track_index: The MIDI track index
+    - clip_index: The clip slot index
+    - root: Root note of the scale (default: 60 = C4, only the pitch class matters)
+    - scale_name: "major", "minor", "dorian", "mixolydian", "pentatonic", "blues", "harmonic_minor", "chromatic"
+    """
+    _validate_index(track_index, "track_index")
+    _validate_index(clip_index, "clip_index")
+
+    scales = {
+        "major": [0, 2, 4, 5, 7, 9, 11],
+        "minor": [0, 2, 3, 5, 7, 8, 10],
+        "dorian": [0, 2, 3, 5, 7, 9, 10],
+        "mixolydian": [0, 2, 4, 5, 7, 9, 10],
+        "pentatonic": [0, 2, 4, 7, 9],
+        "blues": [0, 3, 5, 6, 7, 10],
+        "harmonic_minor": [0, 2, 3, 5, 7, 8, 11],
+        "chromatic": [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11],
+    }
+    if scale_name not in scales:
+        raise ValueError(f"Unknown scale '{scale_name}'. Available: {', '.join(scales.keys())}")
+
+    intervals = scales[scale_name]
+    root_pc = root % 12
+
+    def snap_to_scale(pitch):
+        pc = pitch % 12
+        relative_pc = (pc - root_pc) % 12
+        if relative_pc in intervals:
+            return pitch
+        # Find closest scale tone
+        best = min(intervals, key=lambda x: min(abs(x - relative_pc), 12 - abs(x - relative_pc)))
+        diff = best - relative_pc
+        if abs(diff) > 6:
+            diff = diff - 12 if diff > 0 else diff + 12
+        return max(0, min(127, pitch + diff))
+
+    ableton = get_ableton_connection()
+    clip_notes = ableton.send_command("get_clip_notes", {
+        "track_index": track_index, "clip_index": clip_index,
+        "start_time": 0.0, "time_span": 0.0,
+        "start_pitch": 0, "pitch_span": 128,
+    })
+
+    notes = clip_notes.get("notes", [])
+    if not notes:
+        return "No notes found to quantize"
+
+    # Remove old notes, add corrected ones
+    ableton.send_command("remove_notes_range", {
+        "track_index": track_index, "clip_index": clip_index,
+        "from_time": 0.0, "time_span": 999999.0,
+        "from_pitch": 0, "pitch_span": 128,
+    })
+
+    corrected = 0
+    for note in notes:
+        new_pitch = snap_to_scale(note["pitch"])
+        if new_pitch != note["pitch"]:
+            corrected += 1
+            note["pitch"] = new_pitch
+
+    ableton.send_command("add_notes_to_clip", {
+        "track_index": track_index,
+        "clip_index": clip_index,
+        "notes": notes,
+    })
+
+    return f"Quantized {corrected} out-of-scale notes (of {len(notes)} total) to {scale_name} (root {root_pc}) on track {track_index} clip {clip_index}"
 
 
 # ============================================================
