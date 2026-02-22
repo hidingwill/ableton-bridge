@@ -4,6 +4,51 @@ All notable changes to AbletonBridge will be documented in this file.
 
 ---
 
+## v3.1.0 — 2026-02-22
+
+### Bug Fixes, Device Knowledge Base, Creative Tools Enhancement
+
+#### Bug Fixes (3 critical)
+- **fix**: `humanize_notes` — was calling non-existent `remove_notes` command; corrected to `remove_notes_range` with proper param names (`from_time`/`from_pitch`/`thru_time`/`thru_pitch`)
+- **fix**: `transform_notes` — same `remove_notes` → `remove_notes_range` fix
+- **fix**: `create_automation_curve` — was calling non-existent `add_automation_points`; corrected to `create_clip_automation` with `automation_points` param name
+
+#### Removed Duplicates (3 functions)
+- Removed old `generate_chord_progression` (chord-name based) — replaced by enhanced version with Roman numeral progressions, close/spread/drop2 voicings, and 5 scale types
+- Removed old `generate_drum_pattern` (basic pattern lookup) — replaced by enhanced version with 8 genre presets (rock, house, hiphop, dnb, halftime, jazz, latin, trap) and swing control
+- Removed old `generate_arpeggio` (pitch-string based) — replaced by enhanced version with 9 chord types (major, minor, 7th, dim, aug, sus4, sus2, etc.) and gate control
+
+#### New MCP Tool (1)
+- `duplicate_scene` — duplicate a scene with all its clips (wraps existing Remote Script handler)
+
+#### Device Property Knowledge Base (6 new devices)
+- **DriftDevice** — 28 properties: voice mode/count, pitch bend range, full modulation matrix (filter, pitch, shape, LFO, 3 custom slots with sources + targets)
+- **MeldDevice** — 4 properties: engine selector, unison voices, mono/poly, poly voices
+- **RoarDevice** — 3 properties: routing mode index/list, envelope listen toggle
+- **SpectralResonatorDevice** — 7 properties: frequency dial mode, MIDI gate, mod mode, mono/poly, pitch mode, pitch bend range, polyphony
+- **ShifterDevice** — 2 properties: pitch bend range, pitch mode index
+- **DrumCellDevice** — 1 property: gain
+
+#### New Creative / Music Theory Tools (4 net new)
+- `euclidean_rhythm` — Bjorklund algorithm Euclidean rhythms with rotation
+- `generate_bass_line` — 5 patterns: root-fifth, walking, octave, arpeggiated, syncopated
+- `harmonize_melody` — add scale-aware harmony (3rd/5th/6th/octave) above or below existing notes
+- `quantize_to_scale` — snap out-of-scale notes to nearest scale degree
+
+#### Enhanced Creative Tools (3 replaced)
+- `generate_chord_progression` — now supports Roman numeral progressions (I, V, vi, IV), close/spread/drop2 voicings, 5 scale types
+- `generate_arpeggio` — now supports 9 chord types, gate control, auto-fill to clip length
+- `generate_drum_pattern` — now supports 8 genre styles with swing control
+
+#### Documentation
+- README slimmed from 313 to ~110 lines; updated tool counts to 331 core / 350 total
+- installation_process.txt updated from v1.9.0 to v3.1.0; corrected Remote Script folder structure, M4L device type, browser cache details; added ElevenLabs setup section
+- Fixed v3.0.0 CHANGELOG entry: corrected `remove_notes` → `remove_notes_range` and `add_automation_points` → `create_clip_automation`
+
+### Tool count: **331** core + **19 optional** (ElevenLabs) = **350 total**
+
+---
+
 ## v3.0.0 — 2026-02-21
 
 ### Comprehensive API Gap Closure — 55 New Tools (230 → 285 core)
@@ -85,7 +130,7 @@ Full gap analysis against the Live Object Model identified ~97 actionable gaps. 
 ### MCP Server
 - 55 new `@mcp.tool()` functions (33 TCP + 8 M4L + 14 creative)
 - 8 new OSC builder cases in `_build_osc_packet()`
-- Creative tools use existing `add_notes_to_clip`, `get_clip_notes`, `remove_notes`, `add_automation_points` — no new bridge code needed
+- Creative tools use existing `add_notes_to_clip`, `get_clip_notes`, `remove_notes_range`, `create_clip_automation` — no new bridge code needed
 
 ### Tool count: **285** + **19 optional** (ElevenLabs) = **304 total**
 

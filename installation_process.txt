@@ -1,7 +1,7 @@
 ================================================================================
   AbletonBridge - Installation Process Guide
   Ableton Live Model Context Protocol Integration
-  Version 1.9.0
+  Version 3.1.0
 ================================================================================
 
 PREREQUISITES
@@ -42,10 +42,11 @@ This script runs INSIDE Ableton Live and creates a socket server so the MCP
 server can send commands to Ableton.
 
   1. Locate the "AbletonBridge_Remote_Script" folder inside the ableton-bridge
-     directory. It contains an "__init__.py" file.
+     directory. It contains "__init__.py" and a "handlers/" subdirectory with
+     modular handler files (session.py, clips.py, devices.py, etc.).
 
-  2. Copy the entire "AbletonBridge_Remote_Script" folder (or just create a folder
-     named "AbletonBridge" and paste __init__.py inside) to one of these locations:
+  2. Copy the entire "AbletonBridge_Remote_Script" folder to one of these
+     locations (keep the folder structure intact — __init__.py + handlers/):
 
      WINDOWS (try in order until one works):
        C:\Users\<YourUsername>\Documents\Ableton\User Library\Remote Scripts\
@@ -66,6 +67,7 @@ server can send commands to Ableton.
 
   3. The final path should look like:
        ...\Remote Scripts\AbletonBridge\__init__.py
+       ...\Remote Scripts\AbletonBridge\handlers\session.py  (etc.)
 
   4. Launch Ableton Live (or restart it if already open).
 
@@ -164,8 +166,10 @@ It is optional but required for snapshot, morph, macro, and preset tools.
 
   1. Requires Ableton Live Suite or Standard + Max for Live.
   2. Open the pre-built M4L device from the M4L_Device folder,
-     or create a new Max MIDI Effect and build the patch:
+     or create a new Max Audio Effect and build the patch:
        [udpreceive 9878] -> [js m4l_bridge.js] -> [udpsend localhost 9879]
+     NOTE: The bridge is an Audio Effect (not MIDI Effect) so it can access
+     audio analysis and cross-track metering features.
   3. Copy M4L_Device/m4l_bridge.js to the device's folder.
   4. Save the device and load it on any track.
   5. See M4L_Device/README.md for detailed instructions.
@@ -182,11 +186,53 @@ STEP 7: VERIFY THE CONNECTION
   4. Open the web dashboard at http://127.0.0.1:9880 to verify connection status.
   5. Test with a simple command like: "Get information about my Ableton session"
 
-  NOTE: On first launch, the server automatically populates a browser cache by
-  scanning Ableton's instrument/effect library (~10 seconds). After that,
-  "search_browser" returns instant results. The cache auto-refreshes every
-  5 minutes. You can force a re-scan with the "refresh_browser_cache" tool
-  after installing new packs or instruments.
+  NOTE: The server maintains a disk-persisted browser cache at
+  ~/.ableton-bridge/browser_cache.json.gz (6,400+ items, gzip compressed).
+  On first launch, it scans Ableton's instrument/effect library (~10 seconds)
+  and saves the cache to disk. Subsequent launches load instantly (~50ms).
+  The cache has a 7-day lifetime and auto-refreshes in the background.
+  You can force a re-scan with the "refresh_browser_cache" tool after
+  installing new packs or instruments.
+
+
+================================================================================
+STEP 8: OPTIONAL - ELEVENLABS VOICE & SFX SERVER
+================================================================================
+
+AbletonBridge includes an optional ElevenLabs integration with 19 tools for
+AI voice generation, sound effects, voice cloning, and transcription. Generated
+audio saves directly to your Ableton User Library for easy import.
+
+  1. Install dependencies:
+       pip install -e ".[elevenlabs]"
+
+  2. Set your API key:
+       Windows:  set ELEVENLABS_API_KEY=your_key_here
+       macOS:    export ELEVENLABS_API_KEY=your_key_here
+     Or add to a .env file in the project root.
+
+  3. Add to your MCP host config as a second server alongside AbletonBridge:
+
+     {
+       "mcpServers": {
+         "AbletonBridge": {
+           "command": "uv",
+           "args": ["run", "--directory", "C:\\path\\to\\ableton-bridge", "ableton-bridge"]
+         },
+         "elevenlabs": {
+           "command": "uv",
+           "args": ["run", "elevenlabs-mcp"],
+           "env": {
+             "ELEVENLABS_API_KEY": "your_key_here"
+           }
+         }
+       }
+     }
+
+  Example commands:
+    "Generate a robot voice saying 'drop the bass' and load it into Simpler"
+    "Create thunder sound effect, 3 seconds long"
+    "Transcribe the audio clip on my desktop"
 
 
 ================================================================================
