@@ -692,4 +692,80 @@ Retry logic (`max_attempts = 2`) can cause duplicate operations:
 
 ---
 
-*This analysis was generated through adversarial code review of the AbletonBridge repository. Findings are based on static analysis of the codebase combined with knowledge of MCP protocol specifications, Ableton Live's scripting API constraints, and real-time audio application best practices.*
+---
+
+## Appendix C: MCP Protocol Research Findings (Supporting Evidence)
+
+The following findings from deep research into the MCP specification and best practices directly support the recommendations in this analysis:
+
+### Tool Design Philosophy (philschmid.de, The New Stack)
+
+The most critical insight from MCP best practices literature:
+
+> **"MCP is a User Interface for AI Agents, not a REST API wrapper."** — Philipp Schmid
+
+This directly applies to AbletonBridge: the current 331 tools map ~1:1 to Remote Script commands (a REST-like API wrapper pattern). The recommended approach is to **design tools around musical outcomes**, not individual API calls:
+
+- **Bad:** `create_midi_track` → `load_instrument_or_effect` → `create_clip` → `add_notes_to_clip` → `set_track_name` (5 tool calls)
+- **Good:** `create_instrument_track_with_clip(instrument="Wavetable", name="Lead Synth", clip_length=8, notes=[...])` (1 tool call)
+
+This is the single highest-leverage improvement available. Per the research, MCP adds 300-800ms latency per tool invocation — at 5 calls, that's 1.5-4.0 seconds of pure protocol overhead that a compound tool eliminates.
+
+### Tool Count and Namespace Conventions (steipete.me, MCP Specification)
+
+Best practice: Use `{service}_{action}_{resource}` naming to avoid namespace collisions when running alongside other MCP servers. AbletonBridge tools use bare names (`set_tempo`, `get_track_info`) which will collide if the user runs another music MCP server.
+
+Recommended: Prefix with `ableton_` or keep a manageable tool count (~100-150) with richer parameter schemas. The research confirms that **more tools = more tokens for descriptions = less context for reasoning**.
+
+### MCP Resources for Session State (MCP Spec 2025-11-25)
+
+Resources are "nouns" — read-only data identified by URIs. AbletonBridge should expose:
+
+| Resource URI | Content |
+|---|---|
+| `ableton://session` | Current session info (tempo, time signature, track count) |
+| `ableton://tracks` | All tracks with names, types, device counts |
+| `ableton://tracks/{index}/clips` | Clip slots for a specific track |
+| `ableton://browser/categories` | Available browser categories |
+| `ableton://capabilities` | Server capabilities (M4L status, cache state) |
+
+This would eliminate ~30% of read-only tool calls, as Claude could access session state via resources instead.
+
+### MCP Prompts for Workflow Templates (MCP Spec 2025-11-25)
+
+Prompts are user-controlled instruction templates. Valuable prompts for AbletonBridge:
+
+| Prompt Name | Description |
+|---|---|
+| `create-beat` | Guided drum pattern creation with genre selection |
+| `mix-track` | Structured gain staging → EQ → compression workflow |
+| `sound-design` | Parameter exploration for a specific synth |
+| `arrange-section` | Build an 8/16-bar arrangement section |
+
+### Caching Best Practices (MCP Best Practices Guide)
+
+The research confirms AbletonBridge's browser caching approach is sound, but highlights:
+- **Never cache `tools/call`** — side-effect operations must never be cached (AbletonBridge correctly doesn't cache commands)
+- **Cache `resources/list` and `resources/read`** — if implemented, session state resources should have TTL-based caching
+- **Cache hit performance**: Up to 248,500x faster than live queries (0.01ms vs 2,485ms)
+
+### Security (OWASP MCP Guide, MCP Spec)
+
+AbletonBridge correctly binds to localhost only, which the MCP specification recommends for local servers. However, the research identified additional requirements:
+- **Origin header validation** on the HTTP dashboard (currently not implemented)
+- **Input validation with allowlists** over denylists (AbletonBridge uses range validation but not allowlists for string parameters)
+- **Never expose internal errors** — the `_tool_handler` decorator exposes raw exception messages which could leak internal state
+
+### Competing Implementations
+
+The research found 4 other Ableton MCP server implementations:
+- **ahujasid/ableton-mcp** — Original, songwriting focus
+- **uisato/ableton-mcp-extended** — Live performance, cross-MCP integration
+- **xiaolaa2/ableton-copilot-mcp** — Built on ableton-js, arrangement focus
+- **FabianTinkl/AbletonMCP** — Techno/industrial specialization
+
+All use the same dual-component architecture (Remote Script + MCP Server over local TCP). AbletonBridge has by far the most tools (331 vs ~20-50 for competitors) but the research suggests that **tool quality matters more than quantity** for LLM effectiveness.
+
+---
+
+*This analysis was generated through adversarial code review of the AbletonBridge repository. Findings are based on static analysis of the codebase combined with deep research into MCP protocol specifications (2025-11-25 spec), Ableton Live's scripting API constraints, and real-time audio application best practices.*
