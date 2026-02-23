@@ -605,7 +605,8 @@ class M4LConnection:
         """
         from MCP_Server import __version__ as server_version
 
-        bridge_version = ping_result.get("version", "")
+        inner = ping_result.get("result") or {}
+        bridge_version = inner.get("version", "") if isinstance(inner, dict) else ""
         if not bridge_version:
             # Older bridge versions may not include a version field
             logger.info("M4L bridge did not report a version (older bridge?)")

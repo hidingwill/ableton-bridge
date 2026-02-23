@@ -21,7 +21,7 @@ outlets = 1;
 // Initialization
 // ---------------------------------------------------------------------------
 function loadbang() {
-    post("AbletonBridge M4L Bridge v3.6.0 starting...\n");
+    post("AbletonBridge M4L Bridge v3.2.0 starting...\n");
     post("Listening for OSC commands on port 9878.\n");
     post("Dashboard: http://127.0.0.1:9880\n");
 }
@@ -272,7 +272,7 @@ function handlePing(args) {
     var requestId = (args.length > 0) ? args[0].toString() : "";
     var response = {
         status: "success",
-        result: { m4l_bridge: true, version: "3.6.0" },
+        result: { m4l_bridge: true, version: "3.2.0" },
         id: requestId
     };
     sendResponse(JSON.stringify(response));
