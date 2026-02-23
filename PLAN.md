@@ -170,13 +170,63 @@ time.sleep(0.5)  # brief settle after connection confirmed
 
 **Problem:** All 331 tool handlers are synchronous, blocking the FastMCP async event loop during TCP I/O.
 
-**Changes:**
-- `MCP_Server/server.py`: Convert tool handlers to use `asyncio.to_thread()`. Two approaches:
+**⚠️ Prerequisite — Thread Safety:** The server currently has 15+ global mutable stores
+(`_snapshot_store`, `_macro_store`, `_param_map_store`, `_m4l_ping_cache`,
+`_ableton_connection`, `_m4l_connection`, `_tool_call_log`, `_tool_call_counts`,
+`_device_uri_map`, etc.) of which only 3 are protected by locks (`_tool_call_lock`,
+`_server_log_lock`, `_browser_cache_lock`). Moving tool handlers to a thread pool
+via `asyncio.to_thread()` would allow concurrent tool execution, turning every
+unprotected global into a data race. **This must be addressed before or atomically
+with the async conversion.**
 
-**Option A (minimal change):** Wrap the `_tool_handler` decorator to run in a thread pool:
+**Changes (two sub-steps, in strict order):**
+
+**Step 1 — Add global tool execution lock (serializing bridge):**
+
+Until per-store locks are added in Phase 2.6, use a single `threading.Lock` to
+serialize all tool execution. This unblocks the async event loop (the `await`
+yields control back to FastMCP while the tool waits for the lock) without
+introducing concurrency against unprotected globals:
+
 ```python
 import asyncio
 
+# Serializing lock — ensures only one tool handler touches global state at a time.
+# This is a temporary bridge until Phase 2.6 adds granular per-store locks.
+# At that point, this lock should be removed and tools can run fully concurrent.
+_tool_execution_lock = threading.Lock()
+
+def _tool_handler(error_prefix: str):
+    def decorator(func):
+        @functools.wraps(func)
+        async def wrapper(*args, **kwargs):
+            try:
+                def _guarded():
+                    with _tool_execution_lock:
+                        return func(*args, **kwargs)
+                return await asyncio.to_thread(_guarded)
+            except ValueError as e:
+                return f"Invalid input: {e}"
+            except ConnectionError as e:
+                return f"M4L bridge not available: {e}"
+            except Exception as e:
+                logger.error("Error %s: %s", error_prefix, e)
+                return f"Error {error_prefix}: {e}"
+        return wrapper
+    return decorator
+```
+
+This gives us the async event loop benefit (FastMCP can handle MCP protocol
+messages, healthchecks, etc. while a tool blocks on Ableton I/O) without
+enabling unsynchronized concurrent access to shared state.
+
+**Step 2 — Remove serializing lock after Phase 2.6:**
+
+Once Phase 2.6 adds per-store locks to all mutable globals, remove
+`_tool_execution_lock` and let tools run fully concurrently:
+
+```python
+# After Phase 2.6 — tools are individually thread-safe
 def _tool_handler(error_prefix: str):
     def decorator(func):
         @functools.wraps(func)
@@ -194,9 +244,11 @@ def _tool_handler(error_prefix: str):
     return decorator
 ```
 
-**Option B (better, per-phase):** Do this as part of the Phase 2 module split, making each tool module async-aware.
-
-**Recommendation:** Option A first (it's a 10-line change), then refine with the module split.
+**Note:** Even with per-store locks, the Ableton TCP connection itself is
+inherently serial (one command at a time over a single socket). True concurrent
+tool execution requires either (a) connection pooling or (b) multiplexed
+request IDs — both out of scope for Phase 2. The practical concurrency win
+is freeing the event loop, not parallel Ableton commands.
 
 ---
 
@@ -292,11 +344,53 @@ def register_tools(mcp):
 
 ### 2.6 Fix Global Mutable State
 
-**During the split, add proper thread safety:**
+**⚠️ Blocks Phase 1.3 Step 2:** The serializing `_tool_execution_lock` added in
+Phase 1.3 Step 1 cannot be removed until every store listed below has its own
+lock. This sub-phase is the gate that unlocks full concurrent tool execution.
+
+**Currently protected (3 of 15+):**
+- `_tool_call_log` / `_tool_call_counts` → `_tool_call_lock` ✅
+- `_server_log_buffer` → `_server_log_lock` ✅
+- `_browser_cache_flat` / `_browser_cache_by_category` / `_device_uri_map` → `_browser_cache_lock` ✅
+
+**Need per-store locks added:**
 - `_snapshot_store`, `_macro_store`, `_param_map_store` → wrap with `threading.Lock()` in `tools/snapshots.py`
 - `_m4l_ping_cache` → wrap with `threading.Lock()` in `connections/m4l.py`
 - `_ableton_connection`, `_m4l_connection` → use `threading.Lock()` for access in `connections/__init__.py`
-- Replace bare dict/deque patterns with a `ThreadSafeStore` helper class
+- `_browser_cache_timestamp`, `_browser_cache_populating` → already under `_browser_cache_lock` but verify all access sites
+- `_server_start_time` → set once at startup, read-only after; document as safe
+- `_dashboard_server` → set once at startup; document as safe
+- `_singleton_lock_sock` → set/cleared only in lifespan; document as safe
+
+**Implementation:** Replace bare dict/deque access patterns with a `ThreadSafeStore` helper:
+
+```python
+class ThreadSafeStore:
+    """Dict-like store with built-in locking."""
+    def __init__(self):
+        self._data = {}
+        self._lock = threading.Lock()
+
+    def get(self, key, default=None):
+        with self._lock:
+            return self._data.get(key, default)
+
+    def set(self, key, value):
+        with self._lock:
+            self._data[key] = value
+
+    def delete(self, key):
+        with self._lock:
+            self._data.pop(key, None)
+
+    def items(self):
+        with self._lock:
+            return list(self._data.items())
+```
+
+**Completion criteria:** Once all stores above are protected, remove
+`_tool_execution_lock` from `_tool_handler` (Phase 1.3 Step 2) and verify
+no regressions under concurrent tool calls.
 
 ---
 
@@ -606,11 +700,18 @@ def mix_track_prompt(track_name: str = "") -> str:
 ```
 Phase 0 (Critical Fixes)
     │
-    ├── Phase 1 (Latency Reduction) ── can start immediately after Phase 0
-    │       │
-    │       └── Phase 3 (Compound Tools) ── needs tiered delays working
+    ├── Phase 1 (Latency Reduction)
+    │   ├── 1.1 Tiered Delays ── can start immediately after Phase 0
+    │   ├── 1.2 Cache Warmup ── can start immediately after Phase 0
+    │   └── 1.3 Async Handlers
+    │       ├── Step 1: with serializing lock ── can land in Phase 1
+    │       └── Step 2: remove lock ── BLOCKED on Phase 2.6 (per-store locks)
+    │               │
+    │               └── Phase 3 (Compound Tools) ── needs tiered delays + safe concurrency
     │
     └── Phase 2 (Modularize) ── can start immediately after Phase 0
+            │
+            ├── 2.6 Thread Safety ── MUST complete before Phase 1.3 Step 2
             │
             ├── Phase 4 (Testing) ── needs modules split to write tests
             │
@@ -619,7 +720,15 @@ Phase 0 (Critical Fixes)
                     └── Phase 6 (MCP Enrichment) ── benefits from all prior phases
 ```
 
-**Parallelization:** Phase 1 and Phase 2 can be developed in parallel by different contributors. Phase 3 depends on Phase 1 (tiered delays) being merged first.
+**Parallelization:** Phase 1 (1.1, 1.2, 1.3 Step 1) and Phase 2 can be developed
+in parallel. Phase 1.3 Step 2 (removing the serializing lock for full concurrency)
+is explicitly blocked on Phase 2.6 completing per-store thread safety. Phase 3
+depends on Phase 1 (tiered delays) being merged first.
+
+**Critical ordering constraint:** `asyncio.to_thread()` without the serializing lock
+MUST NOT land until all 15 global mutable stores have per-store locks (Phase 2.6).
+The serializing lock in Step 1 is the safety bridge that makes this safe to ship
+incrementally.
 
 ---
 
@@ -645,4 +754,5 @@ Phase 0 (Critical Fixes)
 | Tiered delays cause stability issues | Low | Medium | Test each tier against Ableton; keep Tier 2 as fallback |
 | Compound tools add complexity without adoption | Low | Low | Track tool usage via dashboard; deprecate unused tools |
 | Push 3 Python API deprecation | Medium (long-term) | High | Phase 5 expands M4L bridge capabilities as hedge |
-| FastMCP async wrapper breaks existing tools | Low | High | Option A in Phase 1.3 is a minimal, reversible change |
+| FastMCP async wrapper breaks existing tools | Low | High | Serializing lock in Phase 1.3 Step 1 preserves single-threaded semantics; reversible |
+| Async + unprotected globals = data races | **High if misordered** | **Critical** | Phase 1.3 Step 2 (lock removal) is hard-gated on Phase 2.6 completion; CI check should enforce |
