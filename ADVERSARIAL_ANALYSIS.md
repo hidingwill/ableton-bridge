@@ -768,4 +768,70 @@ All use the same dual-component architecture (Remote Script + MCP Server over lo
 
 ---
 
-*This analysis was generated through adversarial code review of the AbletonBridge repository. Findings are based on static analysis of the codebase combined with deep research into MCP protocol specifications (2025-11-25 spec), Ableton Live's scripting API constraints, and real-time audio application best practices.*
+## Appendix D: Ableton Live API Research Findings (Supporting Evidence)
+
+### Performance Benchmarks (AbletonOSC NIME 2023 Paper)
+
+The AbletonOSC project published benchmarks at NIME 2023 on an Apple MacBook Pro M1:
+- **100+ queries/second**: No noticeable latency
+- **200+ queries/second**: Audible latency in clip trigger events (processing overshoots the 100ms tick window)
+- **Practical ceiling**: ~100 queries/sec
+
+**Impact on AbletonBridge:** The current modifying-command overhead of 200ms per call means a theoretical maximum of ~5 modifying ops/sec. With tiered delays (P0 recommendation), this could reach 20-50 ops/sec, well within Ableton's safe processing window.
+
+### Timing Resolution Hierarchy
+
+| Method | Resolution | Notes |
+|---|---|---|
+| `live.remote~` (M4L) | Sample-accurate | Audio-rate parameter control, exclusive to M4L |
+| M4L `Task.schedule()` | ~10ms | Deferred callbacks, used by AbletonBridge |
+| Python Remote Script `tick()` | ~60-100ms | AbletonOSC polls every 100ms |
+| TCP round-trip (AbletonBridge) | ~50-300ms | Includes JSON serialization + delays |
+
+**Key insight:** AbletonBridge's M4L bridge correctly uses `Task.schedule()` for chunked operations (50ms intervals), which aligns with M4L's ~10ms resolution. The Remote Script's TCP path is the bottleneck.
+
+### Thread Safety Model (Critical)
+
+All Ableton Live scripting (Python and Max/JavaScript) runs on a **single, low-priority thread**. The embedded Python interpreter only has the older `thread` module, not `threading`. All LiveAPI calls MUST happen on Ableton's main thread.
+
+**AbletonBridge's approach is correct:** The Remote Script dispatches all commands through `schedule_message(0, task)` with `queue.Queue` for cross-thread result passing. The UDP handler also correctly defers to the main thread. However, the analysis confirms that queuing many commands can create backpressure since there's no priority mechanism.
+
+### VST/AU Plugin Parameter Limitations (Confirmed)
+
+Research confirms the feature gap analysis in Section 3.1:
+- Plugins with <32 parameters are auto-configured; >32 require manual "Configure" mode
+- Once configured, parameters ARE accessible through Remote Script and M4L
+- The `class_name` for VST plugins is `PluginDevice` or `AuPluginDevice`
+- Rack devices historically only exposed macro controls (improved in newer Live versions)
+- No way to access a plugin's internal preset browser via the scripting API
+
+### Push 3 Migration Signal (Strategic Risk)
+
+Push 3 is **no longer a Python Remote Script** — it uses a different technology. Push 2 has been migrated to match. This signals that Ableton may deprecate the Python Remote Script API in future versions. AbletonBridge's Remote Script component would be affected.
+
+**Mitigation:** The M4L bridge (m4l_bridge.js) is a separate code path that doesn't depend on the Remote Script API patterns. Expanding M4L capabilities relative to the Remote Script would reduce exposure to this risk.
+
+### Embedded Python Limitations (Confirmed)
+
+The research confirms known constraints that affect AbletonBridge:
+- **No `pip install`**: Cannot use third-party packages inside Live's Python (AbletonBridge correctly uses only stdlib)
+- **Max 4-element arrays** between Python and M4L (the C++ bridge limitation)
+- **No persistent storage**: Remote scripts cannot save data with Live sets (AbletonBridge works around this with `set_song_data`/`set_track_data` which use Live's own data storage)
+- **Crash on syntax errors**: A syntax error in the Remote Script can crash Ableton entirely
+
+### Alternative Architectures Considered
+
+The research identified several alternative bridge architectures:
+
+| Project | Approach | Advantage | Disadvantage |
+|---|---|---|---|
+| **AbletonOSC** | OSC over UDP | Mature, well-documented | 100ms tick polling, no M4L deep access |
+| **ableton-liveapi-tools** | TCP/JSON (port 9004) | Thread-safe queue, 220 tools | No M4L bridge |
+| **live_rpyc** | RPyC over MIDI | Full LOM from external Python | Complex setup, MIDI bandwidth limit |
+| **AbletonBridge** | TCP + UDP + OSC (M4L) | Most comprehensive, 331 tools | Complexity, monolithic server |
+
+AbletonBridge's multi-protocol approach (TCP for commands, UDP for real-time, OSC for M4L deep access) is the most comprehensive but also the most complex. The analysis recommendations to add compound tools and reduce tool count would preserve the capability while reducing complexity.
+
+---
+
+*This analysis was generated through adversarial code review of the AbletonBridge repository. Findings are based on static analysis of the codebase combined with deep research into MCP protocol specifications (2025-11-25 spec), Ableton Live's scripting API constraints (NIME 2023 benchmarks, community documentation), and real-time audio application best practices.*
